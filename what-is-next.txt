@@ -1,5 +1,0 @@
-1. update and delete Users
-2. update and  delete categories
-3. like and unlike
-4. comments
-5. validations and security

@@ -31,6 +31,9 @@ let postSchema = schema({
       },
       comment_body:{
         type: String
+      },
+      comment_time:{
+        type: String
       }
     }
   ],

@@ -117,4 +117,38 @@ router.put('/:id', (req, res)=>{
   }
 });
 
+router.post('/:id/like', (req, res)=>{
+  Posts.findById(req.params.id)
+  .populate('user_id')
+  .exec((err, post)=>{
+    if(err) res.json({msg: err});
+    if(posts.liked.indexOf(post.user_id.id) > -1){
+      Posts.findOneAndUpdate(
+        {_id: req.params.id},
+        {
+          $push:{
+            likes: req.session.user._id
+          }
+        },
+        (err, post) => {
+          if(err) res.json({msg: err});
+          res.json({likesNum: post.likes.length});
+        }
+      )
+    } else {
+      Posts.findOneAndUpdate(
+        {_id: req.params.id},
+        {
+          $pull:{
+            likes: req.session.user._id
+          }
+        },
+        (err, post) => {
+          if(err) res.json({msg: err});
+          res.json({likesNum: post.likes.length});
+        }
+      )
+    }
+  })
+});
 module.exports = router;

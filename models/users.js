@@ -18,6 +18,9 @@ let userSchema = schema({
     type: String,
     required: true
   },
+  gender:{
+    type: String
+  },
   info:{
     type: String,
     required: true
@@ -37,6 +40,19 @@ let userSchema = schema({
       type: schema.Types.ObjectId,
       ref: 'Users'
     }
-  ]
+  ],
+  exp_time:{
+    type: String
+  },
+  temp_id:{
+    type: String
+  },
+  archive:{
+    type: Boolean,
+    default: false
+  },
+  admin:{
+    default: false
+  }
 });
 const Users = ( module.exports = mongoose.model('Users', userSchema) );
