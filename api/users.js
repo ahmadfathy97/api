@@ -95,4 +95,63 @@ router.delete('/:id', (req, res)=>{
   }
 });
 
+
+//follow and unfollow
+
+router.post('/:id/follow', (req, res)=>{
+  Users.findById(req.params.id, (err, User)=>{
+    if(err) res.json({msg: err});
+    if(User.followers.indexOf(req.session.user._id) < 0){
+      Users.findOneAndUpdate(
+        {_id: req.params.id},
+        {
+          $push:{
+            followers: req.session.user._id
+          }
+        },
+        err => {
+          if(err) res.json({msg: err});
+          Users.findOneAndUpdate(
+            {_id: req.session.user._id},
+            {
+              $push:{
+                following: req.params.id
+              }
+            },
+          err => {
+            if(err) res.json({msg: err});
+            Users.findById(req.params.id, (err, User)=>{
+              res.json({followersNum: User.followers.length});
+            });
+          });
+        });
+    } else {
+      Users.findOneAndUpdate(
+        {_id: req.params.id},
+        {
+          $pull:{
+            followers: req.session.user._id
+          }
+        },
+        err => {
+          if(err) res.json({msg: err});
+          Users.findOneAndUpdate(
+            {_id: req.session.user._id},
+            {
+              $pull:{
+                following: req.params.id
+              }
+            },
+          err => {
+            if(err) res.json({msg: err});
+            Users.findById(req.params.id, (err, User)=>{
+              res.json({followersNum: User.followers.length});
+            });
+          });
+        });
+      }
+  });
+});
+
+
 module.exports = router;
