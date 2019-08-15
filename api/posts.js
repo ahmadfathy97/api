@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 //models
 let Posts = require('../models/posts');
+let Comments = require('../models/comments');
 
 // get all posts
 router.get('/', (req, res)=>{
@@ -9,12 +10,22 @@ router.get('/', (req, res)=>{
     Posts.find({})
     .populate('user_id')
     .populate('category_id')
+    .populate({
+      path: 'comments',
+      populate: {
+        path: 'user_id',
+        select: ['username', '_id', 'pic']
+      }
+    })
     .exec((err, posts)=>{
       if(err) console.log(err);
       let customPosts = [];
       posts.forEach((post)=>{
         let customPost = post.toJSON();
         if(customPost.user_id.password) delete customPost.user_id.password;
+        customPost.comments.forEach((comment)=>{
+          if(comment.user_id.password) delete comment.user_id.password;
+        });
         if(customPost.user_id._id == req.session.user._id) customPost.owner = true;
         customPosts.push(customPost);
       });
@@ -53,10 +64,20 @@ router.get('/:id', (req, res)=>{
     Posts.findById(req.params.id)
     .populate('user_id')
     .populate('category_id')
+    .populate({
+      path: 'comments',
+      populate: {
+        path: 'user_id',
+        select: ['username', '_id', 'pic']
+      }
+    })
     .exec((err, post)=>{
       if(err) console.log(err);
       let customPost = post.toJSON();
       if(customPost.user_id.password) delete customPost.user_id.password;
+      customPost.comments.forEach((comment)=>{
+        if(comment.user_id.password) delete comment.user_id.password;
+      });
       if(customPost.user_id._id == req.session.user._id) customPost.owner = true;
       res.json(customPost);
     });
@@ -79,7 +100,7 @@ router.delete('/:id', (req, res)=>{
           res.json({msg: 'post Deleted'});
         });
       } else {
-        res.json({msg: 'are you crazy?‼ ... it is not your post and you wann delete it... fuck you nigga'});
+        res.json({msg: 'are you crazy?‼ ... it is not your post and you wanna delete it... fuck you nigga'});
       }
     });
   } else {
@@ -109,7 +130,7 @@ router.put('/:id', (req, res)=>{
           res.json({msg: 'post Updated'});
         });
       } else {
-        res.json({msg: 'are you crazy?‼ ... it is not your post and you wann edit it... fuck you nigga'});
+        res.json({msg: 'are you crazy?‼ ... it is not your post and you wanna edit it... fuck you nigga'});
       }
     });
   } else {
@@ -156,5 +177,26 @@ router.post('/:id/like', (req, res)=>{
       )
     }
   })
+});
+
+// add comment
+router.post('/:id/add-comment', (req, res)=>{
+  Comments({
+    user_id: req.session.user._id,
+    comment_body: req.body.comment_body,
+    comment_time: req.body.comment_time
+  })
+  .save((err, comment)=>{
+    if(err) res.json({msg: err});
+    Posts.findOneAndUpdate({_id: req.params.id}, {
+      $push:{
+        comments: comment._id
+      }
+    },
+    err => {
+      if(err) res.json({msg: err});
+      res.json({msg: 'comment added'});
+    });
+  });
 });
 module.exports = router;

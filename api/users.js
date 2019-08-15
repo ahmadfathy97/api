@@ -61,7 +61,7 @@ router.put('/:id', (req, res)=>{
         });
       });
     } else {
-      res.json({msg: 'are you crazy?‼ ... it is not your account and you wann edit it... fuck you nigga'});
+      res.json({msg: 'are you crazy?‼ ... it is not your account and you wanna edit it... fuck you nigga'});
     }
   });
   }else {
@@ -87,7 +87,7 @@ router.delete('/:id', (req, res)=>{
           }
         )
       } else {
-        res.json({msg: 'are you crazy?‼ ... it is not your account and you wann delete it... fuck you nigga'});
+        res.json({msg: 'are you crazy?‼ ... it is not your account and you wanna delete it... fuck you nigga'});
       }
     });
   } else {

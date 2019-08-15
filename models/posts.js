@@ -25,16 +25,8 @@ let postSchema = schema({
   ],
   comments:[
     {
-      user_id:{
-        type: schema.Types.ObjectId,
-        ref: 'Users'
-      },
-      comment_body:{
-        type: String
-      },
-      comment_time:{
-        type: String
-      }
+      type: schema.Types.ObjectId,
+      ref: 'Comments'
     }
   ],
   category_id:{
