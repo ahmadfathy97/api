@@ -10,7 +10,8 @@
 1. [x] follow and unfollow
 1. [x] comments
 1. [x] search
+1. [x] notifications
 1. [ ] validations and security
 1. [ ] some other stuff
 ---
-## _ I didn't test it yet :) :) _
+## _I didn't test it yet :) :)_

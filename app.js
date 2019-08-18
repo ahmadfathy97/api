@@ -44,6 +44,7 @@ app.use('/api/categories/', require('./api/categories.js'));
 app.use('/api/users/', require('./api/users.js'));
 app.use('/api/auth/', require('./api/auth.js'));
 app.use('/api/search/', require('./api/search.js'));
+app.use('/api/comments/', require('./api/comments.js'));
 
 app.listen(port, ()=>{
   console.log(`============================== \n||the app is running at ${port}||\n============================== \n`);

@@ -3,6 +3,10 @@ const router = express.Router();
 //models
 let Posts = require('../models/posts');
 let Comments = require('../models/comments');
+let Users = require('../models/users');
+let Notifications = require('../models/notifications');
+
+
 
 // get all posts
 router.get('/', (req, res)=>{
@@ -23,7 +27,9 @@ router.get('/', (req, res)=>{
       posts.forEach((post)=>{
         let customPost = post.toJSON();
         if(customPost.user_id.password) delete customPost.user_id.password;
+        if(customPost.user_id.notifications) delete customPost.user_id.notifications;
         customPost.comments.forEach((comment)=>{
+          if(comment.user_id._id == req.session.user._id) comment.owner = true;
           if(comment.user_id.password) delete comment.user_id.password;
         });
         if(customPost.user_id._id == req.session.user._id) customPost.owner = true;
@@ -55,7 +61,6 @@ router.post('/', (req, res)=>{
   } else{
     res.json({msg: 'you must login first'});
   }
-  //5d509407605a622a18ec3725 category
 });
 
 // get specific post
@@ -75,8 +80,11 @@ router.get('/:id', (req, res)=>{
       if(err) console.log(err);
       let customPost = post.toJSON();
       if(customPost.user_id.password) delete customPost.user_id.password;
+      if(customPost.user_id.notifications) delete customPost.user_id.notifications;
+
       customPost.comments.forEach((comment)=>{
         if(comment.user_id.password) delete comment.user_id.password;
+        if(comment.user_id._id == req.session.user._id) comment.owner = true;
       });
       if(customPost.user_id._id == req.session.user._id) customPost.owner = true;
       res.json(customPost);
@@ -89,10 +97,7 @@ router.get('/:id', (req, res)=>{
 // delete specific post
 router.delete('/:id', (req, res)=>{
   if(req.session.user){
-    Posts.findById(req.params.id)
-    .populate('user_id')
-    .populate('category_id')
-    .exec((err, post)=>{
+    Posts.findById(req.params.id, (err, post)=>{
       if(err) console.log(err);
       if(post.user_id._id == req.session.user._id){
         Posts.remove({_id: req.params.id}, (err)=>{
@@ -111,19 +116,16 @@ router.delete('/:id', (req, res)=>{
 // update specific post
 router.put('/:id', (req, res)=>{
   if(req.session.user){
-    Posts.findById(req.params.id)
-    .populate('user_id')
-    .populate('category_id')
-    .exec((err, post)=>{
+    Posts.findById(req.params.id, (err, post)=>{
       if(err) console.log(err);
       if(post.user_id._id == req.session.user._id){
         Posts.findOneAndUpdate(
           {_id: req.params.id},
           {
             $set: {
-              title: req.body.title,
-              body: req.body.body,
-              category_id: req.body.category_id
+              title: req.body.title || post.title,
+              body: req.body.body || post.body,
+              category_id: req.body.category_id || post.category_id
             }
           }, (err)=>{
           if(err) res.json({error: err});
@@ -140,9 +142,7 @@ router.put('/:id', (req, res)=>{
 
 //like and unlike
 router.post('/:id/like', (req, res)=>{
-  Posts.findById(req.params.id)
-  .populate('user_id')
-  .exec((err, post)=>{
+  Posts.findById(req.params.id, (err, post)=>{
     if(err) res.json({msg: err});
     if(post.likes.indexOf(req.session.user._id) < 0){
       Posts.findOneAndUpdate(
@@ -152,14 +152,31 @@ router.post('/:id/like', (req, res)=>{
             likes: req.session.user._id
           }
         },
-        (err => {
+        err => {
           if(err) res.json({msg: err});
-          Posts.findById(req.params.id, (err, post)=>{
-            res.json({likesNum: post.likes.length});
-          });
-        }
-      )
-    )
+          Notifications(
+            {
+              noti_type: 'like',
+              user_id: req.session.user._id,
+              item_id: req.params.id,
+              noti_text: 'liked your post',
+              noti_time: '20-02-2019'
+            }).save((err, noti)=>{
+              if (err) console.log(err);
+              Users.findOneAndUpdate(
+                {_id: post.user_id},
+                {$push:{
+                  notifications: noti._id
+                }},
+                err=>{
+                if (err) console.log(err);
+                Posts.findById(req.params.id, (err, post)=>{
+                  if(err) console.log(err);
+                  res.json({likesNum: post.likes.length});
+                });
+              });
+            });
+        });
     } else {
       Posts.findOneAndUpdate(
         {_id: req.params.id},
@@ -176,7 +193,7 @@ router.post('/:id/like', (req, res)=>{
         }
       )
     }
-  })
+  });
 });
 
 // add comment
@@ -193,10 +210,29 @@ router.post('/:id/add-comment', (req, res)=>{
         comments: comment._id
       }
     },
-    err => {
+    (err, post) => {
       if(err) res.json({msg: err});
-      res.json({msg: 'comment added'});
+        Notifications({
+          noti_type: 'comment',
+          user_id: post.user_id,
+          item_id: req.params.id,
+          noti_text: 'commented on your post',
+          noti_time: '20-02-2019'
+        })
+        .save((err, noti)=>{
+          if(err) console.log(err);
+          Users.findOneAndUpdate(
+          {_id: post.user_id},
+          {$push: {
+            notifications: noti._id
+          }},
+          err =>{
+            if (err) console.log(err);
+            res.json({msg: 'comment added'});
+        })
+      })
     });
   });
 });
+
 module.exports = router;

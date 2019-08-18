@@ -19,7 +19,8 @@ let userSchema = schema({
     required: true
   },
   gender:{
-    type: String
+    type: String,
+    default: 'male'
   },
   info:{
     type: String,
@@ -39,6 +40,12 @@ let userSchema = schema({
     {
       type: schema.Types.ObjectId,
       ref: 'Users'
+    }
+  ],
+  notifications:[
+    {
+      type: schema.Types.ObjectId,
+      ref: 'Notifications'
     }
   ],
   exp_time:{
