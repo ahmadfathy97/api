@@ -6,11 +6,11 @@ let Comments = require('../models/comments');
 let Users = require('../models/users');
 let Notifications = require('../models/notifications');
 
-
-
+const verify = require('../verifyToken');
 // get all posts
-router.get('/', (req, res)=>{
-  if(req.session.user){
+router.get('/', verify, (req, res)=>{
+  console.log(req.user);
+  if(req.user){
     Posts.find({})
     .populate('user_id')
     .populate('category_id')
@@ -29,10 +29,10 @@ router.get('/', (req, res)=>{
         if(customPost.user_id.password) delete customPost.user_id.password;
         if(customPost.user_id.notifications) delete customPost.user_id.notifications;
         customPost.comments.forEach((comment)=>{
-          if(comment.user_id._id == req.session.user._id) comment.owner = true;
+          if(comment.user_id._id == req.user._id) comment.owner = true;
           if(comment.user_id.password) delete comment.user_id.password;
         });
-        if(customPost.user_id._id == req.session.user._id) customPost.owner = true;
+        if(customPost.user_id._id == req.user._id) customPost.owner = true;
         customPosts.push(customPost);
       });
       res.json(customPosts);
@@ -43,13 +43,13 @@ router.get('/', (req, res)=>{
 });
 
 // create new post
-router.post('/', (req, res)=>{
-  if(req.session.user){
+router.post('/', verify, (req, res)=>{
+  if(req.user){
     let newPost = {};
     newPost.title = req.body.title;
     newPost.body = req.body.body;
     newPost.created_at = req.body.created_at;
-    newPost.user_id = req.session.user._id;
+    newPost.user_id = req.user._id;
     newPost.category_id = req.body.category_id;
     Posts(newPost).save((err)=>{
       if (err) {
@@ -64,8 +64,8 @@ router.post('/', (req, res)=>{
 });
 
 // get specific post
-router.get('/:id', (req, res)=>{
-  if(req.session.user){
+router.get('/:id', verify, (req, res)=>{
+  if(req.user){
     Posts.findById(req.params.id)
     .populate('user_id')
     .populate('category_id')
@@ -84,9 +84,9 @@ router.get('/:id', (req, res)=>{
 
       customPost.comments.forEach((comment)=>{
         if(comment.user_id.password) delete comment.user_id.password;
-        if(comment.user_id._id == req.session.user._id) comment.owner = true;
+        if(comment.user_id._id == req.user._id) comment.owner = true;
       });
-      if(customPost.user_id._id == req.session.user._id) customPost.owner = true;
+      if(customPost.user_id._id == req.user._id) customPost.owner = true;
       res.json(customPost);
     });
   } else {
@@ -95,11 +95,11 @@ router.get('/:id', (req, res)=>{
 });
 
 // delete specific post
-router.delete('/:id', (req, res)=>{
-  if(req.session.user){
+router.delete('/:id', verify, (req, res)=>{
+  if(req.user){
     Posts.findById(req.params.id, (err, post)=>{
       if(err) console.log(err);
-      if(post.user_id._id == req.session.user._id){
+      if(post.user_id._id == req.user._id){
         Posts.remove({_id: req.params.id}, (err)=>{
           if(err) res.json(err);
           res.json({msg: 'post Deleted'});
@@ -114,11 +114,11 @@ router.delete('/:id', (req, res)=>{
 });
 
 // update specific post
-router.put('/:id', (req, res)=>{
-  if(req.session.user){
+router.put('/:id', verify, (req, res)=>{
+  if(req.user){
     Posts.findById(req.params.id, (err, post)=>{
       if(err) console.log(err);
-      if(post.user_id._id == req.session.user._id){
+      if(post.user_id._id == req.user._id){
         Posts.findOneAndUpdate(
           {_id: req.params.id},
           {
@@ -141,15 +141,15 @@ router.put('/:id', (req, res)=>{
 });
 
 //like and unlike
-router.post('/:id/like', (req, res)=>{
+router.post('/:id/like', verify, (req, res)=>{
   Posts.findById(req.params.id, (err, post)=>{
     if(err) res.json({msg: err});
-    if(post.likes.indexOf(req.session.user._id) < 0){
+    if(post.likes.indexOf(req.user._id) < 0){
       Posts.findOneAndUpdate(
         {_id: req.params.id},
         {
           $push:{
-            likes: req.session.user._id
+            likes: req.user._id
           }
         },
         err => {
@@ -157,7 +157,7 @@ router.post('/:id/like', (req, res)=>{
           Notifications(
             {
               noti_type: 'like',
-              user_id: req.session.user._id,
+              user_id: req.user._id,
               item_id: req.params.id,
               noti_text: 'liked your post',
               noti_time: '20-02-2019'
@@ -182,7 +182,7 @@ router.post('/:id/like', (req, res)=>{
         {_id: req.params.id},
         {
           $pull:{
-            likes: req.session.user._id
+            likes: req.user._id
           }
         },
         (err) => {
@@ -197,9 +197,9 @@ router.post('/:id/like', (req, res)=>{
 });
 
 // add comment
-router.post('/:id/add-comment', (req, res)=>{
+router.post('/:id/add-comment', verify, (req, res)=>{
   Comments({
-    user_id: req.session.user._id,
+    user_id: req.user._id,
     comment_body: req.body.comment_body,
     comment_time: req.body.comment_time
   })

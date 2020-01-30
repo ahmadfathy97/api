@@ -1,13 +1,15 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const router = express.Router();
 //models
 let Users = require('../models/users');
 
 const bcrypt = require('bcryptjs');
 
+const verify = require('../verifyToken');
 // sign up
 router.post('/signup', (req, res)=>{
-  if(!req.session.user){
+  if(!req.user){
     let username = req.body.username;
     let email = req.body.email;
     let password = req.body.password;
@@ -49,7 +51,7 @@ router.post('/signup', (req, res)=>{
 
 // log in
 router.post('/login', (req, res)=>{
-  if(req.session.user){
+  if(req.user){
     res.redirect('/api/posts');
   } else {
     let query = { email: req.body.email };
@@ -59,11 +61,9 @@ router.post('/login', (req, res)=>{
           bcrypt.compare(req.body.password, data.password, (err, isMatch) => {
               if (err) res.json({error:err});
               if (isMatch) {
-                  req.session.user = data;
-                  req.session.user.followers = data.followers;
-                  req.session.user.following = data.following;
-                  res.json({msg: 'welcome'});
-                  return true;
+                  const token = jwt.sign({_id: data._id}, process.env.SECRET_TOKEN);
+                  res.json({auth_token: token});
+                  //res.header('auth_token', token).send(token);
               } else {
                   res.json({msg: 'wrong password'});
               }
@@ -76,8 +76,7 @@ router.post('/login', (req, res)=>{
 });
 
 // log out
-router.post('/logout', (req, res)=>{
-  req.session = null;
+router.post('/logout', verify, (req, res)=>{
   res.json({msg: 'you logged out'});
 });
 module.exports = router;

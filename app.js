@@ -1,18 +1,23 @@
 const express = require('express');
+// app init
+const app = express();
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const config = require('./config/database.js');
-const cookieSession = require('cookie-session');
 
-// app init
-const app = express();
+const dotEnv = require('dotenv');
+dotEnv.config();
 
+const cors = require('cors');
+app.use(cors());
+
+const verify = require('./verifyToken');
 // set the port
 const port = process.env.PORT || 3000;
 
 //connect with database
 mongoose.Promise = global.Promise;
-mongoose.connect(config.database);
+mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true});
 mongoose.connection.on('connected', () => {
   console.log(`============================= \n|| Database  Is  Connected ||\n============================= \n`);
 });
@@ -23,20 +28,6 @@ mongoose.connection.on('error', (error) => {
 //body parser middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-
-// session middleware
-app.set('trust proxy', 1);
-app.use(
-    cookieSession({
-        name: 'session',
-        keys: ['icEgv958cdfidDGyU', 'r5oQr8dd785sSe8Ddnj5'],
-        maxAge: 1000 * 60 * 60 * 24 * 30 // 1 month
-    })
-);
-app.use(function(req, res, next) {
-    res.locals.session = req.session;
-    next();
-});
 
 //api
 app.use('/api/posts/', require('./api/posts.js'));

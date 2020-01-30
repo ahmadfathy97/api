@@ -3,15 +3,37 @@ const router = express.Router();
 //models
 let Categories = require('../models/categories');
 
-router.get('/', (req, res)=>{
+const verify = require('../verifyToken');
+router.get('/', verify, (req, res)=>{
     Categories.find({}, (err, categories)=>{
       if (err) console.log(err);
       res.json(categories);
     });
 });
+router.get('/', verify,(req, res)=>{
+  if(req.user){
+    Categories.find({}, (err, categories)=>{
+      if (err) res.json({msg: 'there is an error'});
+      res.json(categories);
+    });
+  } else {
+    res.json({msg: 'so cute ☺'});
+  }
+});
 
-router.post('/', (req, res)=>{
-  if(req.session.user.admin){
+router.get('/:id', verify,(req, res)=>{
+  if(req.user){
+    Categories.findById(req.params.id, (err, category)=>{
+      if (err) res.json({msg: 'there is an error'});
+      res.json(category);
+    });
+  } else {
+    res.json({msg: 'so cute ☺'});
+  }
+});
+
+router.post('/', verify, (req, res)=>{
+  if(req.user){
     let newCategory = {};
     newCategory.category_name = req.body.name;
     newCategory.category_pic = req.body.pic;
@@ -28,8 +50,9 @@ router.post('/', (req, res)=>{
   }
 });
 
-router.put('/:id', (req, res)=>{
-  if(req.session.user.admin){
+router.put('/:id', verify, (req, res)=>{
+  if(req.user){
+    console.log(req.body);
     Categories.findOneAndUpdate(
       {_id: req.params._id},
       {
@@ -49,8 +72,8 @@ router.put('/:id', (req, res)=>{
   }
 });
 
-router.delete('/:id', (req, res)=>{
-  if(req.session.user.admin){
+router.delete('/:id', verify, (req, res)=>{
+  if(req.user){
     Categories.remove({_id: req.params._id}, (err)=>{
       if(err) res.json({msg: err});
       else res.json({msg: 'category deleted'});

@@ -4,8 +4,9 @@ const router = express.Router();
 let Posts = require('../models/posts');
 let Comments = require('../models/comments');
 
+const verify = require('../verifyToken');
 // delete specific comment
-router.delete('/:comment_id', (req, res)=>{
+router.delete('/:comment_id', verify, (req, res)=>{
   Comments.findById(req.params.comment_id, (err, comment)=>{
     if(err) res.json({msg: err});
     if(comment.user_id == req.session.user._id){

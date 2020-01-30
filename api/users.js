@@ -7,9 +7,10 @@ let Notifications = require('../models/notifications');
 
 const bcrypt = require('bcryptjs');
 
-router.get('/:id', (req, res)=>{
-  if(req.session.user){
-    if(req.session.user._id === req.params.id){
+const verify = require('../verifyToken');
+router.get('/:id', verify, (req, res)=>{
+  if(req.user){
+    if(req.user._id === req.params.id){
       Users.findById(req.params.id)
       .populate('notifications')
       .exec((err, user)=>{
@@ -37,11 +38,11 @@ router.get('/:id', (req, res)=>{
 });
 
 // update specific user
-router.put('/:id', (req, res)=>{
-  if(req.session.user){
+router.put('/:id', verify, (req, res)=>{
+  if(req.user){
     Users.findById(req.params.id, (err, user)=> {
       if(err) res.json({msg: err});
-      if(user._id == req.session.user._id){
+      if(user._id == req.user._id){
         Users.findOneAndUpdate(
           {_id: req.params.id},
           {
@@ -51,7 +52,8 @@ router.put('/:id', (req, res)=>{
               pic: req.body.pic || user.pic,
               info: req.body.info || user.info,
               dayOfBirth: req.body.dayOfBirth || user.dayOfBirth,
-              gender: req.body.gender || user.gender
+              gender: req.body.gender || user.gender,
+              admin: req.body.admin || false
             }
           }, (err)=>{
           if(err) res.json({error12: err});
@@ -68,11 +70,11 @@ router.put('/:id', (req, res)=>{
 
 
 // change password
-router.put('/:id/password', (req, res)=>{
-  if(req.session.user){
+router.put('/:id/password', verify, verify, (req, res)=>{
+  if(req.user){
     Users.findById(req.params.id, (err, user)=> {
       if(err) res.json({msg: err});
-      if(user._id == req.session.user._id){
+      if(user._id == req.user._id){
         let password = req.body.password;
         let oldPassword = req.body.oldPassword;
         if(password && oldPassword){
@@ -114,11 +116,11 @@ router.put('/:id/password', (req, res)=>{
 
 
 // delete specific user
-router.delete('/:id', (req, res)=>{
-  if(req.session.user){
+router.delete('/:id', verify, (req, res)=>{
+  if(req.user){
     Users.findById(req.params.id, (err, user)=>{
       if(err) res.json({msg: err});
-      if(user._id == req.session.user._id){
+      if(user._id == req.user._id){
         Users.findOneAndUpdate(
           {_id: req.params.id},
           {$set: {
@@ -142,21 +144,21 @@ router.delete('/:id', (req, res)=>{
 
 //follow and unfollow
 
-router.post('/:id/follow', (req, res)=>{
+router.post('/:id/follow', verify, (req, res)=>{
   Users.findById(req.params.id, (err, User)=>{
     if(err) res.json({msg: err});
-    if(User.followers.indexOf(req.session.user._id) < 0){
+    if(User.followers.indexOf(req.user._id) < 0){
       Users.findOneAndUpdate(
         {_id: req.params.id},
         {
           $push:{
-            followers: req.session.user._id
+            followers: req.user._id
           }
         },
         err => {
           if(err) res.json({msg: err});
           Users.findOneAndUpdate(
-            {_id: req.session.user._id},
+            {_id: req.user._id},
             {
               $push:{
                 following: req.params.id
@@ -167,7 +169,7 @@ router.post('/:id/follow', (req, res)=>{
             Notifications(
               {
                 noti_type: 'follow',
-                user_id: req.session.user._id,
+                user_id: req.user._id,
                 item_id: req.params.id,
                 noti_text: 'is following your',
                 noti_time: '20-02-2019'
@@ -194,13 +196,13 @@ router.post('/:id/follow', (req, res)=>{
         {_id: req.params.id},
         {
           $pull:{
-            followers: req.session.user._id
+            followers: req.user._id
           }
         },
         err => {
           if(err) res.json({msg: err});
           Users.findOneAndUpdate(
-            {_id: req.session.user._id},
+            {_id: req.user._id},
             {
               $pull:{
                 following: req.params.id
