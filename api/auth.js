@@ -10,12 +10,7 @@ const verify = require('../verifyToken');
 // sign up
 router.post('/signup', (req, res)=>{
   if(!req.user){
-    let username = req.body.username;
-    let email = req.body.email;
-    let password = req.body.password;
-    let pic = req.body.pic;
-    let info = req.body.info;
-    let dayOfBirth = req.body.dayOfBirth;
+    let {username, email, password, pic, info, dayOfBirth} = req.body;
     Users.findOne({ email: email }, (err, data) => {
         if (err) console.log(err);
         if (data) {
@@ -26,19 +21,18 @@ router.post('/signup', (req, res)=>{
               if (err) res.json({error: err});
               password = hash;
               Users({
-                  username: username,
-                  email: email,
-                  password: password,
-                  pic: pic,
-                  info: info,
-                  dayOfBirth: dayOfBirth,
+                  username,
+                  email,
+                  password,
+                  pic,
+                  info,
+                  dayOfBirth,
                   followers: [],
                   following: []
               }).save((err, user) => {
                   if (err) res.json({error: err});
                   console.log(user);
-                  res.json({msg: 'registered'});
-                  return true;
+                  res.json({msg: `${username} can login now as with this email ${email}`});
               });
             });
           });
