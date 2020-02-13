@@ -56,7 +56,7 @@ router.post('/login', (req, res)=>{
               if (err) res.json({error:err});
               if (isMatch) {
                   const token = jwt.sign({_id: data._id}, process.env.SECRET_TOKEN);
-                  res.json({auth_token: token});
+                  res.json({auth_token: token, id: data._id});
                   //res.header('auth_token', token).send(token);
               } else {
                   res.json({msg: 'wrong password'});

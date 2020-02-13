@@ -198,40 +198,44 @@ router.post('/:id/like', verify, (req, res)=>{
 
 // add comment
 router.post('/:id/add-comment', verify, (req, res)=>{
+  console.log(45645464);
+  console.log(req.body, req.params.id);
   Comments({
     user_id: req.user._id,
     comment_body: req.body.comment_body,
     comment_time: req.body.comment_time
   })
   .save((err, comment)=>{
-    if(err) res.json({msg: err});
+    if(err) res.json({msg: err})
     Posts.findOneAndUpdate({_id: req.params.id}, {
-      $push:{
-        comments: comment._id
-      }
-    },
-    (err, post) => {
-      if(err) res.json({msg: err});
-        Notifications({
-          noti_type: 'comment',
-          user_id: post.user_id,
-          item_id: req.params.id,
-          noti_text: 'commented on your post',
-          noti_time: '20-02-2019'
-        })
-        .save((err, noti)=>{
-          if(err) console.log(err);
-          Users.findOneAndUpdate(
-          {_id: post.user_id},
-          {$push: {
-            notifications: noti._id
-          }},
-          err =>{
-            if (err) console.log(err);
-            res.json({msg: 'comment added'});
-        })
-      })
-    });
+    $push:{
+      comments: comment._id
+    }
+  },
+  (err, post) => {
+    if(err) res.json({msg: err});
+      res.json({comment: comment, post_id: post._id})
+  })
+  //       Notifications({
+  //         noti_type: 'comment',
+  //         user_id: post.user_id,
+  //         item_id: req.params.id,
+  //         noti_text: 'commented on your post',
+  //         noti_time: '20-02-2019'
+  //       })
+  //       .save((err, noti)=>{
+  //         if(err) console.log(err);
+  //         Users.findOneAndUpdate(
+  //         {_id: post.user_id},
+  //         {$push: {
+  //           notifications: noti._id
+  //         }},
+  //         err =>{
+  //           if (err) console.log(err);
+  //           res.json({msg: 'comment added'});
+  //       })
+  //     })
+  //   });
   });
 });
 
