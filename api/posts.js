@@ -198,7 +198,6 @@ router.post('/:id/like', verify, (req, res)=>{
 
 // add comment
 router.post('/:id/add-comment', verify, (req, res)=>{
-  console.log(45645464);
   console.log(req.body, req.params.id);
   Comments({
     user_id: req.user._id,
@@ -208,14 +207,21 @@ router.post('/:id/add-comment', verify, (req, res)=>{
   .save((err, comment)=>{
     if(err) res.json({msg: err})
     Posts.findOneAndUpdate({_id: req.params.id}, {
-    $push:{
-      comments: comment._id
-    }
-  },
-  (err, post) => {
-    if(err) res.json({msg: err});
-      res.json({comment: comment, post_id: post._id})
+      $push:{
+        comments: comment._id
+      }
+    },
+    err => {
+      if(err) console.log(err);
+      Comments.findById(comment._id)
+      .populate('user_id')
+      .exec((err, comment)=>{
+        console.log(comment);
+        if (err) console.log(err);
+        res.json({comment: comment, post_id: req.params.id})
+    })
   })
+
   //       Notifications({
   //         noti_type: 'comment',
   //         user_id: post.user_id,

@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const config = require('./config/database.js');
 
+const path = require('path');
 const dotEnv = require('dotenv');
 dotEnv.config();
 
@@ -14,6 +15,8 @@ app.use(cors());
 const verify = require('./verifyToken');
 // set the port
 const port = process.env.PORT || 3000;
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 //connect with database
 mongoose.Promise = global.Promise;
