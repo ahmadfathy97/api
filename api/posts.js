@@ -172,7 +172,7 @@ router.post('/:id/like', verify, (req, res)=>{
                 if (err) console.log(err);
                 Posts.findById(req.params.id, (err, post)=>{
                   if(err) console.log(err);
-                  res.json({likesNum: post.likes.length});
+                  res.json({likes: post.likes, post_id: req.params.id});
                 });
               });
             });
@@ -188,7 +188,7 @@ router.post('/:id/like', verify, (req, res)=>{
         (err) => {
           if(err) res.json({msg: err});
           Posts.findById(req.params.id, (err, post)=>{
-            res.json({likesNum: post.likes.length});
+            res.json({likes: post.likes, post_id: req.params.id});
           });
         }
       )
