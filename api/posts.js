@@ -63,6 +63,40 @@ router.post('/', verify, (req, res)=>{
   }
 });
 
+router.get('/latest/', verify,(req, res)=>{
+  if(req.user){
+    Posts.find({})
+    .limit(5)
+    .sort({'created_at': -1})
+    .populate('user_id')
+    .populate('category_id')
+    .populate({
+      path: 'comments',
+      populate: {
+        path: 'user_id',
+        select: ['username', '_id', 'pic']
+      }
+    })
+    .exec((err, posts)=>{
+      if(err) console.log(err);
+      let customPosts = [];
+      posts.forEach((post)=>{
+        let customPost = post.toJSON();
+        if(customPost.user_id.password) delete customPost.user_id.password;
+        if(customPost.user_id.notifications) delete customPost.user_id.notifications;
+        customPost.comments.forEach((comment)=>{
+          if(comment.user_id._id == req.user._id) comment.owner = true;
+          if(comment.user_id.password) delete comment.user_id.password;
+        });
+        if(customPost.user_id._id == req.user._id) customPost.owner = true;
+        customPosts.push(customPost);
+      });
+      res.json(customPosts);
+    });
+  } else {
+    res.json({msg: 'you must login first'});
+  }
+});
 // get specific post
 router.get('/:id', verify, (req, res)=>{
   if(req.user){
@@ -172,7 +206,7 @@ router.post('/:id/like', verify, (req, res)=>{
                 if (err) console.log(err);
                 Posts.findById(req.params.id, (err, post)=>{
                   if(err) console.log(err);
-                  res.json({likesNum: post.likes.length});
+                  res.json({likes: post.likes, post_id: req.params.id});
                 });
               });
             });
@@ -188,7 +222,7 @@ router.post('/:id/like', verify, (req, res)=>{
         (err) => {
           if(err) res.json({msg: err});
           Posts.findById(req.params.id, (err, post)=>{
-            res.json({likesNum: post.likes.length});
+            res.json({likes: post.likes, post_id: req.params.id});
           });
         }
       )
