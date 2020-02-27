@@ -185,7 +185,7 @@ router.post('/:id/follow', verify, (req, res)=>{
                   err => {
                     if(err) console.log(err);
                     Users.findById(req.params.id, (err, User)=>{
-                      res.json({followersNum: User.followers.length});
+                      res.json({followers: User.followers});
                     });
                   });
             });
@@ -211,7 +211,7 @@ router.post('/:id/follow', verify, (req, res)=>{
           err => {
             if(err) res.json({msg: err});
             Users.findById(req.params.id, (err, User)=>{
-              res.json({followersNum: User.followers.length});
+              res.json({followers: User.followers});
             });
           });
         });

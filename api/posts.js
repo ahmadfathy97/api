@@ -51,12 +51,12 @@ router.post('/', verify, (req, res)=>{
     newPost.created_at = req.body.created_at;
     newPost.user_id = req.user._id;
     newPost.category_id = req.body.category_id;
-    Posts(newPost).save((err)=>{
+    Posts(newPost).save((err, post)=>{
       if (err) {
         console.log(err);
         res.json({msg: 'post not created'});
       };
-      res.json({msg: 'post created'});
+      res.json({msg: 'post created', post_id: post._id});
     });
   } else{
     res.json({msg: 'you must login first'});
@@ -128,6 +128,14 @@ router.get('/:id', verify, (req, res)=>{
   }
 });
 
+// get all posts that belong to one user
+router.get('/user/:id', verify,(req, res)=>{
+  Posts.find({user_id : req.params.id}, (err, posts)=>{
+    if (err) console.log(err);
+    res.json(posts);
+  });
+});
+
 // delete specific post
 router.delete('/:id', verify, (req, res)=>{
   if(req.user){
@@ -136,7 +144,7 @@ router.delete('/:id', verify, (req, res)=>{
       if(post.user_id._id == req.user._id){
         Posts.remove({_id: req.params.id}, (err)=>{
           if(err) res.json(err);
-          res.json({msg: 'post Deleted'});
+          res.json({msg: 'post Deleted', post_id: req.params.id});
         });
       } else {
         res.json({msg: 'are you crazy?‼ ... it is not your post and you wanna delete it... fuck you nigga'});
@@ -250,32 +258,32 @@ router.post('/:id/add-comment', verify, (req, res)=>{
       Comments.findById(comment._id)
       .populate('user_id')
       .exec((err, comment)=>{
-        console.log(comment);
         if (err) console.log(err);
         res.json({comment: comment, post_id: req.params.id})
+        Posts.findById(req.params.id, (err, post)=>{
+          if (err) console.log(err);
+          Notifications({
+            noti_type: 'comment',
+            user_id: post.user_id,
+            item_id: req.params.id,
+            noti_text: 'commented on your post',
+            noti_time: req.body.comment_time
+          })
+          .save((err, noti)=>{
+            if(err) console.log(err);
+            Users.findOneAndUpdate(
+            {_id: post.user_id},
+            {$push: {
+              notifications: noti._id
+            }},
+            err =>{
+              if (err) console.log(err);
+              console.log(noti);
+            })
+          })
+        })
+      })
     })
-  })
-
-  //       Notifications({
-  //         noti_type: 'comment',
-  //         user_id: post.user_id,
-  //         item_id: req.params.id,
-  //         noti_text: 'commented on your post',
-  //         noti_time: '20-02-2019'
-  //       })
-  //       .save((err, noti)=>{
-  //         if(err) console.log(err);
-  //         Users.findOneAndUpdate(
-  //         {_id: post.user_id},
-  //         {$push: {
-  //           notifications: noti._id
-  //         }},
-  //         err =>{
-  //           if (err) console.log(err);
-  //           res.json({msg: 'comment added'});
-  //       })
-  //     })
-  //   });
   });
 });
 
