@@ -8,30 +8,44 @@ let Notifications = require('../models/notifications');
 const bcrypt = require('bcryptjs');
 
 const verify = require('../verifyToken');
+
+router.get('/notifications', verify,(req, res)=>{
+  Notifications.find({owner: req.user._id})
+  .sort({noti_time: 1})
+  .populate({
+    path: 'user_id',
+    select: ['username', '_id', 'pic']
+  })
+  .exec((err, notis)=>{
+    res.json({notis: notis})
+  });
+});
+router.post('/notifications', verify, (req, res)=>{
+  Notifications.update(
+    {owner: req.user._id, readed: false},
+    {$set:
+      {readed: true}
+    },
+    err => {
+      if (err) console.log(err);
+    }
+  )
+})
 router.get('/:id', verify, (req, res)=>{
   if(req.user){
-    if(req.user._id === req.params.id){
-      Users.findById(req.params.id)
-      .populate('notifications')
-      .exec((err, user)=>{
-        if (err) res.json({error : err});
-        if(user.archive) res.json({msg: 'sorry this account deleted'});
-        else res.json(user);
-      });
-    } else {
-      Users.findById(req.params.id, (err, user)=>{
-        if (err) res.json({error : err});
-        if(user.archive) {
-          res.json({msg: 'sorry this account deleted'});
-        }
-        else {
-          let customUser = user.toJSON();
-          if(customUser.password) delete customUser.password;
-          if(customUser.notifications) delete customUser.notifications;
-          res.json(customUser);
-        }
-      });
-    }
+    Users.findById(req.params.id, (err, user)=>{
+      if (err) res.json({error : err});
+      if(user.archive) {
+        res.json({msg: 'sorry this account deleted'});
+      }
+      else {
+        let customUser = user.toJSON();
+        if(customUser.password) delete customUser.password;
+        if(customUser.notifications) delete customUser.notifications;
+        if(customUser.pic) customUser.pic = `http://${req.hostname}:3000/${customUser.pic}`;
+        res.json(customUser);
+      }
+    });
   } else {
     res.json({msg : 'you must log in first'});
   }
@@ -169,10 +183,11 @@ router.post('/:id/follow', verify, (req, res)=>{
             Notifications(
               {
                 noti_type: 'follow',
+                owner: req.params.id,
                 user_id: req.user._id,
                 item_id: req.params.id,
-                noti_text: 'is following your',
-                noti_time: '20-02-2019'
+                noti_text: 'is following you',
+                noti_time: req.body.time
               }
             )
             .save((err, noti) => {
@@ -218,6 +233,5 @@ router.post('/:id/follow', verify, (req, res)=>{
       }
   });
 });
-
 
 module.exports = router;

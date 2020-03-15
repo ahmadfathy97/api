@@ -194,15 +194,16 @@ router.post('/:id/like', verify, (req, res)=>{
             likes: req.user._id
           }
         },
-        err => {
+        (err, post) => {
           if(err) res.json({msg: err});
           Notifications(
             {
               noti_type: 'like',
+              owner: post.user_id,
               user_id: req.user._id,
               item_id: req.params.id,
               noti_text: 'liked your post',
-              noti_time: '20-02-2019'
+              noti_time: req.body.time
             }).save((err, noti)=>{
               if (err) console.log(err);
               Users.findOneAndUpdate(
@@ -264,7 +265,8 @@ router.post('/:id/add-comment', verify, (req, res)=>{
           if (err) console.log(err);
           Notifications({
             noti_type: 'comment',
-            user_id: post.user_id,
+            owner: post.user_id,
+            user_id: req.user._id,
             item_id: req.params.id,
             noti_text: 'commented on your post',
             noti_time: req.body.comment_time

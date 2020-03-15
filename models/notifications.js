@@ -14,6 +14,10 @@ let notificationSchema = schema({
     type: schema.Types.ObjectId,
     required: true
   },
+  owner: {
+    type: schema.Types.ObjectId,
+    required: true
+  },
   noti_text:{
     type: String,
     required: true
@@ -21,6 +25,10 @@ let notificationSchema = schema({
   noti_time:{
     type: String,
     required: true
+  },
+  readed: {
+    type: Boolean,
+    default: false
   }
 });
 const Notifications = ( module.exports = mongoose.model('Notifications', notificationSchema) );
