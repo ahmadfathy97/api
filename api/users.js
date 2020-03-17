@@ -11,7 +11,7 @@ const verify = require('../verifyToken');
 
 router.get('/notifications', verify,(req, res)=>{
   Notifications.find({owner: req.user._id})
-  .sort({noti_time: 1})
+  .sort({noti_time: -1})
   .populate({
     path: 'user_id',
     select: ['username', '_id', 'pic']
@@ -21,7 +21,7 @@ router.get('/notifications', verify,(req, res)=>{
   });
 });
 router.post('/notifications', verify, (req, res)=>{
-  Notifications.update(
+  Notifications.updateMany(
     {owner: req.user._id, readed: false},
     {$set:
       {readed: true}
