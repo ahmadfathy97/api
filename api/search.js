@@ -17,7 +17,7 @@ router.get('/', verify, (req, res) => {
       users.forEach((user)=>{
         let newUser = user.toJSON();
         if(newUser.password) delete user.password;
-        if(newUser.pic) newUser.pic = `http://${req.hostname}:3000/${newUser.pic}`;
+        if(newUser.pic) newUser.pic = `http://${req.hostname}/${newUser.pic}`;
         newUsers.push(newUser);
       });
       res.json({searchResult: newUsers});
