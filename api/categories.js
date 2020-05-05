@@ -53,7 +53,7 @@ router.get('/', verify,(req, res)=>{
     Categories.find({}, (err, categories)=>{
       if (err) res.json({msg: 'there is an error'});
       categories.forEach((category)=>{
-        category.category_pic = `http://${req.hostname}:3000/${category.category_pic}`;
+        category.category_pic = `http://${req.hostname}/${category.category_pic}`;
         console.log(category.category_pic);
       })
       console.log(categories);
@@ -79,7 +79,7 @@ router.get('/:name', verify,(req, res)=>{
         }
       })
       .exec((err, posts)=>{
-        category.category_pic = `http://${req.hostname}:3000/${category.category_pic}`;
+        category.category_pic = `http://${req.hostname}/${category.category_pic}`;
         res.json({category: category, posts: posts});
       })
     });

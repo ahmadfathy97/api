@@ -42,7 +42,7 @@ router.get('/:id', verify, (req, res)=>{
         let customUser = user.toJSON();
         if(customUser.password) delete customUser.password;
         if(customUser.notifications) delete customUser.notifications;
-        if(customUser.pic) customUser.pic = `http://${req.hostname}:3000/${customUser.pic}`;
+        if(customUser.pic) customUser.pic = `http://${req.hostname}/${customUser.pic}`;
         res.json(customUser);
       }
     });
