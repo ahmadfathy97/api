@@ -9,6 +9,43 @@ const bcrypt = require('bcryptjs');
 
 const verify = require('../verifyToken');
 
+
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+//express().use('/public', express.static(path.join(__dirname, 'public')));
+
+function filter(file, cb) {
+    let exts = ['png', 'jpg', 'jpeg', 'gif'];
+    let containeExts = exts.includes(file.mimetype.split('/')[1].toLowerCase()); //return true or false
+    let allowdMimeType = file.mimetype.startsWith("image/"); //return true or false
+    if(containeExts && allowdMimeType){
+        return cb(null ,true)
+    }
+    else{
+        cb('Error: File type not allowed!', false)
+    }
+}
+let storage = multer.diskStorage({
+  destination : (req, file, cb) => {
+    cb(null, './public/uploads');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+let upload = multer({
+  storage: storage,
+  limits: {fileSize: 1024 * 1024 * 10},
+  fileFilter: function(req, file, cb) {
+    filter(file, cb)
+  }
+});
+
+let uploadImage = upload.single('pic');
+
+
 router.get('/notifications', verify,(req, res)=>{
   Notifications.find({owner: req.user._id})
   .sort({noti_time: -1})
@@ -52,9 +89,16 @@ router.get('/:id', verify, (req, res)=>{
 });
 
 // update specific user
-router.put('/:id', verify, (req, res)=>{
+router.put('/:id', verify, uploadImage,(req, res)=>{
   if(req.user){
+    let pic;
     Users.findById(req.params.id, (err, user)=> {
+      if(req.file) {
+        pic = req.file.path.replace('public', '');
+        fs.unlink('public/' +user.pic, (err)=>{
+          if(err) console.log(err);
+        })
+      }
       if(err) res.json({msg: err});
       if(user._id == req.user._id){
         Users.findOneAndUpdate(
@@ -63,15 +107,26 @@ router.put('/:id', verify, (req, res)=>{
             $set: {
               username: req.body.username || user.username,
               email: req.body.email || user.email,
-              pic: req.body.pic || user.pic,
+              pic: pic || user.pic,
               info: req.body.info || user.info,
               dayOfBirth: req.body.dayOfBirth || user.dayOfBirth,
               gender: req.body.gender || user.gender,
-              admin: req.body.admin || false
+              // admin: req.body.admin || false
             }
           }, (err)=>{
-          if(err) res.json({error12: err});
-          res.json({msg: 'user Updated'});
+          if(err) res.json({error: err});
+          Users.findById(req.params.id, (err, newUser)=>{
+            if (err) res.json({error : err});
+            if(user.archive) {
+              res.json({msg: 'sorry this account deleted'});
+            } else{
+            let customUser = newUser.toJSON();
+            if(customUser.password) delete customUser.password;
+            if(customUser.notifications) delete customUser.notifications;
+            if(customUser.pic) customUser.pic = `http://${req.hostname}/${customUser.pic}`;
+            res.json(customUser);
+            }
+          })
         });
       } else {
         res.json({msg: 'are you crazy?‼ ... it is not your account and you wanna edit it... fuck you nigga'});

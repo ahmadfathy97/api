@@ -56,6 +56,25 @@ router.post('/', verify, (req, res)=>{
         console.log(err);
         res.json({msg: 'post not created'});
       };
+      Notifications({
+        noti_type: 'new post',
+        owner: req.user._id,
+        user_id: req.user._id,
+        item_id: post._id,
+        noti_text: 'created new post',
+        noti_time: post.created_at
+        })
+        .save((err, noti)=>{
+          if(err) console.log(err);
+          Users.updateMany(
+            {following: req.user._id },
+            {$push:
+              {notifications: noti._id}
+            },
+          err => {
+            if(err) console.log(err)
+          })
+        })
       res.json({msg: 'post created', post_id: post._id});
     });
   } else{

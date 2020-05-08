@@ -8,7 +8,7 @@ const bcrypt = require('bcryptjs');
 const verify = require('../verifyToken');
 //search for any user matches the query
 router.get('/', verify, (req, res) => {
-  Users.find({username: {$regex : '.*' + req.query.username + '.*'}})
+  Users.find({username: {$regex : '.*' + req.query.username + '.*', $options: 'i'}})
   .select({username: 1, _id: 1, pic: 1})
   .exec((err, users) => {
     if(err) res.json({msg: err});
