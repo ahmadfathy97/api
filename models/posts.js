@@ -9,6 +9,10 @@ let postSchema = schema({
     type: String,
     required: true
   },
+  sanitizedHtml:{
+    type: String,
+    required: true
+  },
   created_at:{
     type: String,
     required: true
@@ -34,4 +38,10 @@ let postSchema = schema({
     ref: 'Categories'
   }
 });
+// postSchema.pre('validate', function(next){
+//   if(this.body){
+//     this.sanitizedHtml = dompurify.sanitize(marked(this.body))
+//   }
+//   next()
+// })
 const Posts = ( module.exports = mongoose.model('Posts', postSchema) );

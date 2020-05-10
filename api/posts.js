@@ -7,6 +7,13 @@ let Users = require('../models/users');
 let Notifications = require('../models/notifications');
 
 const verify = require('../verifyToken');
+
+
+const marked = require('marked')
+const createDomPurify = require('dompurify')
+const { JSDOM } = require('jsdom')
+const dompurify = createDomPurify(new JSDOM().window)
+
 // get all posts
 router.get('/', verify, (req, res)=>{
   console.log(req.user);
@@ -51,6 +58,7 @@ router.post('/', verify, (req, res)=>{
     newPost.created_at = req.body.created_at;
     newPost.user_id = req.user._id;
     newPost.category_id = req.body.category_id;
+    newPost.sanitizedHtml = dompurify.sanitize(marked(req.body.body))
     Posts(newPost).save((err, post)=>{
       if (err) {
         console.log(err);
@@ -186,7 +194,9 @@ router.put('/:id', verify, (req, res)=>{
             $set: {
               title: req.body.title || post.title,
               body: req.body.body || post.body,
-              category_id: req.body.category_id || post.category_id
+              category_id: req.body.category_id || post.category_id,
+              sanitizedHtml: dompurify.sanitize(marked(req.body.body))
+
             }
           }, (err)=>{
           if(err) res.json({error: err});
