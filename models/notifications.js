@@ -14,10 +14,12 @@ let notificationSchema = schema({
     type: schema.Types.ObjectId,
     required: true
   },
-  owner: {
-    type: schema.Types.ObjectId,
-    required: true
-  },
+  owner: [
+    {
+      type: schema.Types.ObjectId,
+      required: true
+    }
+  ],
   noti_text:{
     type: String,
     required: true

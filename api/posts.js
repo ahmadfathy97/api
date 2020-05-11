@@ -64,25 +64,30 @@ router.post('/', verify, (req, res)=>{
         console.log(err);
         res.json({msg: 'post not created'});
       };
-      Notifications({
-        noti_type: 'new post',
-        owner: req.user._id,
-        user_id: req.user._id,
-        item_id: post._id,
-        noti_text: 'created new post',
-        noti_time: post.created_at
-        })
-        .save((err, noti)=>{
-          if(err) console.log(err);
-          Users.updateMany(
-            {following: req.user._id },
-            {$push:
-              {notifications: noti._id}
-            },
-          err => {
-            if(err) console.log(err)
+      let owners;
+      Users.findById(req.user._id, (err, user)=>{
+        if (err) console.log(err);
+        Notifications({
+          noti_type: 'new post',
+          owner: user.followers,
+          user_id: req.user._id,
+          item_id: post._id,
+          noti_text: 'created new post',
+          noti_time: post.created_at
           })
-        })
+          .save((err, noti)=>{
+            if(err) console.log(err);
+            Users.updateMany(
+              {_id: {$in: owners} },
+              {$push:
+                {notifications: noti._id}
+              },
+            (err, data) => {
+              if(err) console.log(err);
+              console.log(data);
+            })
+          })
+      });
       res.json({msg: 'post created', post_id: post._id});
     });
   } else{
@@ -278,7 +283,7 @@ router.post('/:id/add-comment', verify, (req, res)=>{
   })
   .save((err, comment)=>{
     if(err) res.json({msg: err})
-    Posts.findOneAndUpdate({_id: req.params.id}, {
+    Posts.update({_id: req.params.id}, {
       $push:{
         comments: comment._id
       }
@@ -290,27 +295,31 @@ router.post('/:id/add-comment', verify, (req, res)=>{
       .exec((err, comment)=>{
         if (err) console.log(err);
         res.json({comment: comment, post_id: req.params.id})
-        Posts.findById(req.params.id, (err, post)=>{
+        Posts.findById(req.params.id)
+        .populate('comments')
+        .exec((err, post)=>{
           if (err) console.log(err);
+          let usersWhoCommented = post.comments.map((comment)=>{
+            return comment.user_id !== req.user._id ? comment.user_id : null;
+          });
           Notifications({
             noti_type: 'comment',
-            owner: post.user_id,
+            owner: [...usersWhoCommented, post.user_id],
             user_id: req.user._id,
             item_id: req.params.id,
-            noti_text: 'commented on your post',
+            noti_text: 'commented on a post',
             noti_time: req.body.comment_time
           })
           .save((err, noti)=>{
             if(err) console.log(err);
-            Users.findOneAndUpdate(
-            {_id: post.user_id},
-            {$push: {
-              notifications: noti._id
-            }},
-            err =>{
-              if (err) console.log(err);
-              console.log(noti);
-            })
+            Users.updateMany({_id: {$in: [...usersWhoCommented, post.user_id]}},
+              {$push: {
+                notifications: noti._id
+              }},
+              (err, data) =>{
+                if (err) console.log(err);
+                console.log(data);
+              })
           })
         })
       })
