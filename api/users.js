@@ -88,6 +88,29 @@ router.get('/:id', verify, (req, res)=>{
   }
 });
 
+// verification
+
+router.post('/verify/', (req, res)=>{
+  if(!req.user){
+    Users.findOne({email: req.query.email}, (err, user)=>{
+      if(!user.verified){
+        if(parseInt(req.body.verificationNum) === user.verificationNum){
+          Users.update(
+            {email : req.query.email},
+            {$set: {verified: true } },
+            err =>{
+              console.log(err);
+              res.json({success: true, msg: 'emaile verified, You can login now'})
+            })
+        } else{
+          res.json({success: false, msg: 'the code is not correct'})
+        }
+      } else{
+          res.json({success: false, msg: 'this email already verfied '})
+      }
+    })
+  }
+});
 // update specific user
 router.put('/:id', verify, uploadImage,(req, res)=>{
   if(req.user){

@@ -60,6 +60,20 @@ let userSchema = schema({
   },
   admin:{
     default: false
+  },
+  verificationNum: {
+    type: Number,
+    required: true
+  },
+  verified: {
+    type: Boolean,
+    default: false
+  },
+  restPassNum:{
+    type: Number
+  },
+  restPassExp: {
+    type: String
   }
 });
 const Users = ( module.exports = mongoose.model('Users', userSchema) );
