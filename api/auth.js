@@ -155,7 +155,7 @@ router.post('/login', (req, res)=>{
 
 // forget password
 router.post('/forget-password', (req, res)=>{
-  let email = req.body.email;
+  const {email, redirectLink} = req.body;
   let hash = crypto.createHash('sha256');
   Users.findOne({email: email}, (err, user)=>{
     if(err) res.json({success: flase, msg: 'something went wrong'});
@@ -170,7 +170,7 @@ router.post('/forget-password', (req, res)=>{
         },
         err =>{
           if(err) res.json({success: flase, msg: 'something went wrong'});
-          let html = `<p>got to this link to reset your password <a href="https://${req.headers.host}?resetpassword=reset&hash=${buffer.toString('hex')}" >rest your password</a></p>`
+          let html = `<p>got to this link to reset your password <a href="${redirectLink}?resetpassword=reset&hash=${buffer.toString('hex')}" >rest your password</a></p>`
           sendEmail(email, html, 'reset your password')
           res.json({success: true, msg: 'check your email'});
         })
