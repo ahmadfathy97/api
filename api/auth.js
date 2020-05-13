@@ -2,6 +2,11 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer')
 const router = express.Router();
+const dotEnv = require('dotenv');
+dotEnv.config();
+
+const crypto = require('crypto');
+
 //models
 let Users = require('../models/users');
 
@@ -46,22 +51,22 @@ let upload = multer({
 let uploadImage = upload.single('pic');
 
 // node mailer
-function sendEmail(email, randNum){
+function sendEmail(email, html, subject){
   const transporter = nodemailer.createTransport({
       service: 'gmail',
       port: 587,
       secure: false, // false if http true if https i think :)
       logger: true,
       auth: {
-        user: '',//put your email here
-        pass: ''//put your password here
+        user: process.env.EMAIL,//put your email here
+        pass: process.env.PASSWORD//put your password here
       }
     });
   const mailOptions = {
     from: 'ahmad\'s blog', // sender address
     to: email, // list of receivers
-    subject: 'verification', // Subject line
-    html: `<p>your verification number is <code style="font-style: italic"> ${randNum} </code> </p>`// plain text body
+    subject: subject, // Subject line
+    html:html // plain text body
   };
   transporter.sendMail(mailOptions, function (err, info) {
     if(err)
@@ -106,7 +111,8 @@ router.post('/signup', uploadImage,(req, res)=>{
                 }).save((err, user) => {
                     if (err) res.json({error: err});
                     console.log(user);
-                    sendEmail(email, randNum)
+                    let html =`<p>your verification number is <code style="font-style: italic"> ${randNum} </code> </p>`
+                    sendEmail(email, html, 'verification')
                     res.json({msg: `check ${email} to verify your account`, success: true});
                 });
               });
@@ -147,6 +153,71 @@ router.post('/login', (req, res)=>{
   }
 });
 
+// forget password
+router.post('/forget-password', (req, res)=>{
+  let email = req.body.email;
+  let hash = crypto.createHash('sha256');
+  Users.findOne({email: email}, (err, user)=>{
+    if(err) res.json({success: flase, msg: 'something went wrong'});
+    if(user) {
+      crypto.randomBytes(32, function(err, buffer){
+        if(err) res.json({success: flase, msg: 'something went wrong'});
+        Users.update({email: email}, {
+          $set: {
+            resetPassHash : buffer.toString('hex'),
+            resetPassExp: Date.now() + 1000 * 60 * 60 * 2
+          }
+        },
+        err =>{
+          if(err) res.json({success: flase, msg: 'something went wrong'});
+          let html = `<p>got to this link to reset your password <a href="https://${req.headers.host}?resetpassword=reset&hash=${buffer.toString('hex')}" >rest your password</a></p>`
+          sendEmail(email, html, 'reset your password')
+          res.json({success: true, msg: 'check your email'});
+        })
+      })
+    } else {
+      res.json({success: false, msg: 'the email does not exist'});
+    }
+  })
+})
+
+
+// reset password
+router.post('/reset-password/:hash', (req, res)=>{
+  const {password, confirmPassword} = req.body;
+  let error = '';
+  if(!password.length || !confirmPassword.length){
+    error = 'all fields are required'
+  } else if(password !== confirmPassword){
+    error = 'password does not match'
+  }
+
+  if(!error.length){
+    Users.findOne({resetPassHash: req.params.hash}, (err, user)=>{
+      console.log(user.resetPassExp, Date.now())
+      if(err) res.json({success: false, msg: 'something went wrong'});
+      if(user && user.resetPassExp > Date.now() ){
+        bcrypt.genSalt(10, (err, salt) => {
+          bcrypt.hash(password, salt, (err, hash) => {
+            Users.update({_id:user._id}, {
+              $set: {password: hash, resetPassExp: Date.now()}
+            },
+            err =>{
+              if(err) res.json({success: false, msg: 'something went wrong'});
+              res.json({success: true, msg: 'you can login with the new password'});
+            })
+          })
+        })
+      } else if(user && user.resetPassExp <= Date.now() ){
+        res.json({success: false, msg: 'this link expired'});
+      } else{
+        res.json({success: false, msg: 'something went wrong'});
+      }
+    })
+  } else{
+    res.json({success: false, msg: error});
+  }
+})
 // log out
 router.post('/logout', verify, (req, res)=>{
   res.json({msg: 'you logged out'});

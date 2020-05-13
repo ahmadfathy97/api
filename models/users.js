@@ -69,10 +69,10 @@ let userSchema = schema({
     type: Boolean,
     default: false
   },
-  restPassNum:{
-    type: Number
+  resetPassHash:{
+    type: String
   },
-  restPassExp: {
+  resetPassExp: {
     type: String
   }
 });
