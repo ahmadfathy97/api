@@ -200,7 +200,7 @@ router.post('/reset-password/:hash', (req, res)=>{
         bcrypt.genSalt(10, (err, salt) => {
           bcrypt.hash(password, salt, (err, hash) => {
             Users.update({_id:user._id}, {
-              $set: {password: hash, resetPassExp: Date.now()}
+              $set: {password: hash, resetPassExp: Date.now(), verified: true}
             },
             err =>{
               if(err) res.json({success: false, msg: 'something went wrong'});

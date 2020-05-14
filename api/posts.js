@@ -55,6 +55,7 @@ router.post('/', verify, (req, res)=>{
     let newPost = {};
     newPost.title = req.body.title;
     newPost.body = req.body.body;
+    newPost.dir = req.body.dir;
     newPost.created_at = req.body.created_at;
     newPost.user_id = req.user._id;
     newPost.category_id = req.body.category_id;
@@ -200,8 +201,8 @@ router.put('/:id', verify, (req, res)=>{
               title: req.body.title || post.title,
               body: req.body.body || post.body,
               category_id: req.body.category_id || post.category_id,
+              rtl: req.body.dir || post.dir,
               sanitizedHtml: dompurify.sanitize(marked(req.body.body))
-
             }
           }, (err)=>{
           if(err) res.json({error: err});

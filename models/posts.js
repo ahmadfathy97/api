@@ -9,6 +9,10 @@ let postSchema = schema({
     type: String,
     required: true
   },
+  dir:{
+    type: String,
+    default: "ltr"
+  },
   sanitizedHtml:{
     type: String,
     required: true
