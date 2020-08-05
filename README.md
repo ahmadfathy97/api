@@ -14,4 +14,12 @@
 1. [ ] validations and security
 1. [ ] some other stuff
 ---
+## if you wanna try it locally you must have your *.env* file 
+```
+SECRET_TOKEN = 'your SECRET_TOKEN'
+DB = 'your DB uri'
+DB_SECRET = 'your DB_SECRET'
+EMAIL = 'your EMAIL'
+PASSWORD = 'your PASSWORD'
+```
 ## _I didn't test it yet :) :)_
