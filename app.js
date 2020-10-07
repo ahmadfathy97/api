@@ -12,6 +12,10 @@ dotEnv.config();
 const cors = require('cors');
 app.use(cors());
 
+// for history mode
+// const history = require('connect-history-api-fallback');
+// app.use(history());
+
 const verify = require('./verifyToken');
 // set the port
 const port = process.env.PORT || 3000;
