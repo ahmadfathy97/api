@@ -4,7 +4,7 @@ const router = express.Router();
 let Posts = require('../models/posts');
 let Comments = require('../models/comments');
 
-const verify = require('../verifyToken');
+const verify = require('../middlewares/verifyToken');
 // delete specific comment
 router.delete('/:comment_id', verify, (req, res)=>{
   Comments.findById(req.params.comment_id, (err, comment)=>{

@@ -12,43 +12,6 @@ let Users = require('../models/users');
 
 const bcrypt = require('bcryptjs');
 
-const verify = require('../verifyToken');
-
-
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-
-//express().use('/public', express.static(path.join(__dirname, 'public')));
-
-function filter(file, cb) {
-    let exts = ['png', 'jpg', 'jpeg', 'gif'];
-    let containeExts = exts.includes(file.mimetype.split('/')[1].toLowerCase()); //return true or false
-    let allowdMimeType = file.mimetype.startsWith("image/"); //return true or false
-    if(containeExts && allowdMimeType){
-        return cb(null ,true)
-    }
-    else{
-        cb('Error: File type not allowed!', false)
-    }
-}
-let storage = multer.diskStorage({
-  destination : (req, file, cb) => {
-    cb(null, './public/uploads');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
-  }
-});
-let upload = multer({
-  storage: storage,
-  limits: {fileSize: 1024 * 1024 * 10},
-  fileFilter: function(req, file, cb) {
-    filter(file, cb)
-  }
-});
-
-let uploadImage = upload.single('pic');
 
 // node mailer
 function sendEmail(email, html, subject){
@@ -76,10 +39,9 @@ function sendEmail(email, html, subject){
   });
 }
 
+let AuthController = {};
 
-
-// sign up
-router.post('/signup', uploadImage,(req, res)=>{
+AuthController.SignUp = (req, res)=>{
   if(!req.user){
     let errors = [];
     let pic;
@@ -125,10 +87,9 @@ router.post('/signup', uploadImage,(req, res)=>{
   } else{
     res.json({msg: 'you are already logged in log out to sign up'})
   }
-});
+}
 
-// log in
-router.post('/login', (req, res)=>{
+AuthController.LogIn = (req, res)=>{
   if(!req.user){
     let query = { email: req.body.email };
     Users.findOne(query, (err, user) => {
@@ -151,10 +112,10 @@ router.post('/login', (req, res)=>{
         }
     });
   }
-});
+}
 
-// forget password
-router.post('/forget-password', (req, res)=>{
+
+AuthController.ForgetPassword = (req, res)=>{
   const {email, redirectLink} = req.body;
   let hash = crypto.createHash('sha256');
   Users.findOne({email: email}, (err, user)=>{
@@ -179,11 +140,9 @@ router.post('/forget-password', (req, res)=>{
       res.json({success: false, msg: 'the email does not exist'});
     }
   })
-})
+};
 
-
-// reset password
-router.post('/reset-password/:hash', (req, res)=>{
+AuthController.ResetPassword = (req, res)=>{
   const {password, confirmPassword} = req.body;
   let error = '';
   if(!password.length || !confirmPassword.length){
@@ -217,9 +176,9 @@ router.post('/reset-password/:hash', (req, res)=>{
   } else{
     res.json({success: false, msg: error});
   }
-})
-// log out
-router.post('/logout', verify, (req, res)=>{
+};
+
+AuthController.LogOut = (req, res)=>{
   res.json({msg: 'you logged out'});
-});
-module.exports = router;
+}
+module.exports = AuthController;

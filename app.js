@@ -16,7 +16,7 @@ app.use(cors());
 // const history = require('connect-history-api-fallback');
 // app.use(history());
 
-const verify = require('./verifyToken');
+const verify = require('./middlewares/verifyToken');
 // set the port
 const port = process.env.PORT || 3000;
 
@@ -37,12 +37,12 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 //api
-app.use('/api/posts/', require('./api/posts.js'));
-app.use('/api/categories/', require('./api/categories.js'));
-app.use('/api/users/', require('./api/users.js'));
-app.use('/api/auth/', require('./api/auth.js'));
-app.use('/api/search/', require('./api/search.js'));
-app.use('/api/comments/', require('./api/comments.js'));
+app.use('/api/posts/', require('./routes/posts.js'));
+app.use('/api/categories/', require('./routes/categories.js'));
+app.use('/api/users/', require('./routes/users.js'));
+app.use('/api/auth/', require('./routes/auth.js'));
+app.use('/api/search/', require('./routes/search.js'));
+app.use('/api/comments/', require('./routes/comments.js'));
 
 app.listen(port, ()=>{
   console.log(`============================== \n||the app is running at ${port}||\n============================== \n`);

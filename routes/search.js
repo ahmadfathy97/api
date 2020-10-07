@@ -5,7 +5,7 @@ let Users = require('../models/users');
 
 const bcrypt = require('bcryptjs');
 
-const verify = require('../verifyToken');
+const verify = require('../middlewares/verifyToken');
 //search for any user matches the query
 router.get('/', verify, (req, res) => {
   Users.find({username: {$regex : '.*' + req.query.username + '.*', $options: 'i'}})

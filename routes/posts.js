@@ -6,7 +6,7 @@ let Comments = require('../models/comments');
 let Users = require('../models/users');
 let Notifications = require('../models/notifications');
 
-const verify = require('../verifyToken');
+const verify = require('../middlewares/verifyToken');
 
 
 const marked = require('marked')

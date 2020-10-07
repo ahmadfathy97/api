@@ -7,7 +7,7 @@ let Notifications = require('../models/notifications');
 
 const bcrypt = require('bcryptjs');
 
-const verify = require('../verifyToken');
+const verify = require('../middlewares/verifyToken');
 
 
 const multer = require('multer');

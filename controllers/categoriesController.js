@@ -1,54 +1,9 @@
-// انا نعسان وزهقت من الشغل عليه
-// لما نيجي نرجع الصور المفروض نرجعها بالطريقة دي
-// req.hostname + port category_pic
-
-
-const express = require('express');
-const router = express.Router();
 //models
 let Categories = require('../models/categories');
 let Posts = require('../models/posts');
 
-
-const verify = require('../verifyToken');
-
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-
-//express().use('/public', express.static(path.join(__dirname, 'public')));
-
-function filter(file, cb) {
-    let exts = ['png', 'jpg', 'jpeg', 'gif'];
-    let containeExts = exts.includes(file.mimetype.split('/')[1].toLowerCase()); //return true or false
-    let allowdMimeType = file.mimetype.startsWith("image/"); //return true or false
-    if(containeExts && allowdMimeType){
-        return cb(null ,true)
-    }
-    else{
-        cb('Error: File type not allowed!', false)
-    }
-}
-let storage = multer.diskStorage({
-  destination : (req, file, cb) => {
-    cb(null, './public/uploads');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
-  }
-});
-let upload = multer({
-  storage: storage,
-  limits: {fileSize: 1024 * 1024 * 10},
-  fileFilter: function(req, file, cb) {
-    filter(file, cb)
-  }
-});
-
-let uploadImages = upload.single('category_pic');
-
-
-router.get('/', verify,(req, res)=>{
+let controller = {}
+controller.AllCategories = (req, res)=>{
   if(req.user){
     Categories.find({}, (err, categories)=>{
       if (err) res.json({msg: 'there is an error'});
@@ -62,9 +17,9 @@ router.get('/', verify,(req, res)=>{
   } else {
     res.json({msg: 'so cute ☺'});
   }
-});
+};
 
-router.get('/:name', verify,(req, res)=>{
+controller.SpecificCategory = (req, res)=>{
   if(req.user){
     Categories.findOne({category_name: req.params.name}, (err, category)=>{
       if (err) res.json({msg: 'there is an error'});
@@ -86,9 +41,9 @@ router.get('/:name', verify,(req, res)=>{
   } else {
     res.json({msg: 'so cute ☺'});
   }
-});
+};
 
-router.post('/', verify, uploadImages, (req, res)=>{
+controller.AddCategory = (req, res)=>{
   if(req.user){
     let newCategory = {};
     console.log('fdfds', req.body);
@@ -105,9 +60,9 @@ router.post('/', verify, uploadImages, (req, res)=>{
   } else {
     res.json({msg: 'so cute ☺'});
   }
-});
+};
 
-router.put('/:id', verify, (req, res)=>{
+controller.EditCategoty = (req, res)=>{
   if(req.user){
     console.log(req.body);
     Categories.findOneAndUpdate(
@@ -127,9 +82,9 @@ router.put('/:id', verify, (req, res)=>{
   } else {
     res.json({msg: 'so cute ☺'});
   }
-});
+}
 
-router.delete('/:id', verify, (req, res)=>{
+controller.DeletCategory = (req, res)=>{
   if(req.user){
     Categories.remove({_id: req.params._id}, (err)=>{
       if(err) res.json({msg: err});
@@ -138,6 +93,6 @@ router.delete('/:id', verify, (req, res)=>{
   } else {
     res.json({msg: 'so cute ☺'});
   }
-});
+}
 
-module.exports = router;
+module.exports = controller;
