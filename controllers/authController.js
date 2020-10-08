@@ -39,9 +39,9 @@ function sendEmail(email, html, subject){
   });
 }
 
-let AuthController = {};
+let controller = {};
 
-AuthController.SignUp = (req, res)=>{
+controller.SignUp = (req, res)=>{
   if(!req.user){
     let errors = [];
     let pic;
@@ -89,7 +89,7 @@ AuthController.SignUp = (req, res)=>{
   }
 }
 
-AuthController.LogIn = (req, res)=>{
+controller.LogIn = (req, res)=>{
   if(!req.user){
     let query = { email: req.body.email };
     Users.findOne(query, (err, user) => {
@@ -115,7 +115,7 @@ AuthController.LogIn = (req, res)=>{
 }
 
 
-AuthController.ForgetPassword = (req, res)=>{
+controller.ForgetPassword = (req, res)=>{
   const {email, redirectLink} = req.body;
   let hash = crypto.createHash('sha256');
   Users.findOne({email: email}, (err, user)=>{
@@ -142,7 +142,7 @@ AuthController.ForgetPassword = (req, res)=>{
   })
 };
 
-AuthController.ResetPassword = (req, res)=>{
+controller.ResetPassword = (req, res)=>{
   const {password, confirmPassword} = req.body;
   let error = '';
   if(!password.length || !confirmPassword.length){
@@ -178,7 +178,7 @@ AuthController.ResetPassword = (req, res)=>{
   }
 };
 
-AuthController.LogOut = (req, res)=>{
+controller.LogOut = (req, res)=>{
   res.json({msg: 'you logged out'});
 }
-module.exports = AuthController;
+module.exports = controller;
