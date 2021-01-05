@@ -3,6 +3,19 @@ const router = express.Router();
 const postsController = require('../controllers/postsController');
 const verify = require('../middlewares/verifyToken');
 
+const cleanText = require('../helpers/cleanText.js');
+router.use((req, res, next)=>{
+  if(req.body){
+    for(field in req.body){
+      if(Array.isArray(req.body[field])) {
+        req.body[field] = req.body[field].map(item => cleanText.clean(item))
+      } else{
+        req.body[field] = cleanText.clean(req.body[field]);
+      }
+    }
+  }
+  next()
+})
 // get all posts
 router.get('/', verify, postsController.FetchAll);
 

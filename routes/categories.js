@@ -1,16 +1,23 @@
-// انا نعسان وزهقت من الشغل عليه
-// لما نيجي نرجع الصور المفروض نرجعها بالطريقة دي
-// req.hostname + port category_pic
-
-// ياه ذكريات والله ♥♥♥
-// ♥♥♥♥♥  ☺☺☺ ♥♥♥♥♥
-
 const express = require('express');
 const router = express.Router();
 
 const verify = require('../middlewares/verifyToken');
 const uploadImages = require('../middlewares/uploadFile');
 let categoriesController = require('../controllers/categoriesController');
+
+const cleanText = require('../helpers/cleanText.js');
+router.use((req, res, next)=>{
+  if(req.body){
+    for(field in req.body){
+      if(Array.isArray(req.body[field])) {
+        req.body[field] = req.body[field].map(item => cleanText.clean(item))
+      } else{
+        req.body[field] = cleanText.clean(req.body[field]);
+      }
+    }
+  }
+  next()
+})
 
 router.get('/', verify, categoriesController.AllCategories);
 
