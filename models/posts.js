@@ -41,7 +41,7 @@ let postSchema = schema({
     type: schema.Types.ObjectId,
     ref: 'Categories'
   }
-});
+}, {timestamps: true});
 // postSchema.pre('validate', function(next){
 //   if(this.body){
 //     this.sanitizedHtml = dompurify.sanitize(marked(this.body))

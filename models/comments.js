@@ -11,5 +11,5 @@ let commentSchema = schema({
   comment_time:{
     type: String
   }
-});
+}, {timestamps: true});
 const Comments = ( module.exports = mongoose.model('Comments', commentSchema) );

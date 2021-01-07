@@ -75,5 +75,5 @@ let userSchema = schema({
   resetPassExp: {
     type: String
   }
-});
+}, {timestamps: true});
 const Users = ( module.exports = mongoose.model('Users', userSchema) );

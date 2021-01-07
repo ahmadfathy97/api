@@ -32,5 +32,5 @@ let notificationSchema = schema({
     type: Boolean,
     default: false
   }
-});
+}, {timestamps: true});
 const Notifications = ( module.exports = mongoose.model('Notifications', notificationSchema) );

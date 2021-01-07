@@ -56,39 +56,43 @@ controller.AddPost = (req, res)=>{
     newPost.user_id = req.user._id;
     newPost.category_id = req.body.category_id;
     newPost.sanitizedHtml = dompurify.sanitize(marked(req.body.body))
-    Posts(newPost).save((err, post)=>{
-      if (err) {
-        console.log(err);
-        res.json({msg: 'post not created'});
-      };
-      let owners;
-      Users.findById(req.user._id, (err, user)=>{
-        if (err) console.log(err);
-        Notifications({
-          noti_type: 'new post',
-          owner: user.followers,
-          user_id: req.user._id,
-          item_id: post._id,
-          noti_text: 'created new post',
-          noti_time: post.created_at
-          })
-          .save((err, noti)=>{
-            if(err) console.log(err);
-            Users.updateMany(
-              {_id: {$in: owners} },
-              {$push:
-                {notifications: noti._id}
-              },
-            (err, data) => {
-              if(err) console.log(err);
-              console.log(data);
+    if(!newPost.title || !newPost.body || !newPost.dir || !newPost.created_at || !newPost.category_id){
+      res.json({success: false, 'msg': 'all fields are required'})
+    } else{
+      Posts(newPost).save((err, post)=>{
+        if (err) {
+          console.log(err);
+          res.json({msg: 'post not created'});
+        };
+        let owners;
+        Users.findById(req.user._id, (err, user)=>{
+          if (err) console.log(err);
+          Notifications({
+            noti_type: 'new post',
+            owner: user.followers,
+            user_id: req.user._id,
+            item_id: post._id,
+            noti_text: 'created new post',
+            noti_time: post.created_at
             })
-          })
+            .save((err, noti)=>{
+              if(err) console.log(err);
+              Users.updateMany(
+                {_id: {$in: owners} },
+                {$push:
+                  {notifications: noti._id}
+                },
+              (err, data) => {
+                if(err) console.log(err);
+                console.log(data);
+              })
+            })
+        });
+        res.json({success: true, msg: 'post created', post_id: post._id});
       });
-      res.json({msg: 'post created', post_id: post._id});
-    });
+    }
   } else{
-    res.json({msg: 'you must login first'});
+    res.json({success: false, msg: 'you must login first'});
   }
 }
 
@@ -110,15 +114,17 @@ controller.Latest = (req, res)=>{
       if(err) console.log(err);
       let customPosts = [];
       posts.forEach((post)=>{
-        let customPost = post.toJSON();
-        if(customPost.user_id.password) delete customPost.user_id.password;
-        if(customPost.user_id.notifications) delete customPost.user_id.notifications;
-        customPost.comments.forEach((comment)=>{
-          if(comment.user_id._id == req.user._id) comment.owner = true;
-          if(comment.user_id.password) delete comment.user_id.password;
-        });
-        if(customPost.user_id._id == req.user._id) customPost.owner = true;
-        customPosts.push(customPost);
+        if(post){
+          let customPost = post.toJSON();
+          if(customPost.user_id.password) delete customPost.user_id.password;
+          if(customPost.user_id.notifications) delete customPost.user_id.notifications;
+          customPost.comments.forEach((comment)=>{
+            if(comment.user_id._id == req.user._id) comment.owner = true;
+            if(comment.user_id.password) delete comment.user_id.password;
+          });
+          if(customPost.user_id._id == req.user._id) customPost.owner = true;
+          customPosts.push(customPost);
+        }
       });
       res.json(customPosts);
     });
@@ -141,16 +147,18 @@ controller.SpecificPost = (req, res)=>{
     })
     .exec((err, post)=>{
       if(err) console.log(err);
-      let customPost = post.toJSON();
-      if(customPost.user_id.password) delete customPost.user_id.password;
-      if(customPost.user_id.notifications) delete customPost.user_id.notifications;
+      if(post){
+        let customPost = post.toJSON();
+        if(customPost.user_id.password) delete customPost.user_id.password;
+        if(customPost.user_id.notifications) delete customPost.user_id.notifications;
 
-      customPost.comments.forEach((comment)=>{
-        if(comment.user_id.password) delete comment.user_id.password;
-        if(comment.user_id._id == req.user._id) comment.owner = true;
-      });
-      if(customPost.user_id._id == req.user._id) customPost.owner = true;
-      res.json(customPost);
+        customPost.comments.forEach((comment)=>{
+          if(comment.user_id.password) delete comment.user_id.password;
+          if(comment.user_id._id == req.user._id) comment.owner = true;
+        });
+        if(customPost.user_id._id == req.user._id) customPost.owner = true;
+        res.json(customPost);
+      }
     });
   } else {
     res.json({msg: 'you must login first'});
