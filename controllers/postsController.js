@@ -168,8 +168,12 @@ controller.SpecificPost = (req, res)=>{
 
 controller.SpecificUserPosts = (req, res)=>{
   Posts.find({user_id : req.params.id}, (err, posts)=>{
-    if (err) console.log(err);
-    res.json(posts);
+    if (err) res.json({success: false, msg: 'something went wrong'});
+    else if(posts){
+      res.json({success: true, posts});
+    } else {
+      res.json({success: false, msg: 'something went wrong'});
+    }
   });
 };
 

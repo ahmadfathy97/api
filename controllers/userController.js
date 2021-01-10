@@ -33,21 +33,23 @@ controller.MakeNotificationsReaded = (req, res)=>{
 
 controller.SpecificUser = (req, res)=>{
   if(req.user){
-    Users.findById(req.params.id, (err, user)=>{
-      if (err) res.json({error : err});
-      if(user.archive) {
-        res.json({msg: 'sorry this account deleted'});
-      }
-      else {
-        let customUser = user.toJSON();
-        if(customUser.password) delete customUser.password;
-        if(customUser.notifications) delete customUser.notifications;
-        if(customUser.pic) customUser.pic = `http://${req.hostname}/${customUser.pic}`;
-        res.json(customUser);
+    Users.findById(req.params.id)
+    .select('-password -notifications -resetPassHash -resetPassExp -verificationNum')
+    .exec((err, user)=>{
+      if (err) res.json({success: false, msg : 'something went wrong'});
+      if(user){
+        if(user.archive) {
+          res.json({success: false, msg: 'sorry this account deleted'});
+        }
+        else {
+          let customUser = user.toJSON();
+          if(customUser.pic) customUser.pic = `http://${req.hostname}/${customUser.pic}`;
+          res.json({success: true, user: customUser});
+        }
       }
     });
   } else {
-    res.json({msg : 'you must log in first'});
+    res.json({success: false, msg : 'you must login first'});
   }
 };
 
