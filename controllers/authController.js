@@ -1,43 +1,16 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer')
 const router = express.Router();
 const dotEnv = require('dotenv');
 dotEnv.config();
 
 const crypto = require('crypto');
 
+const mailHelper = require('../helpers/mailHelper');
 //models
 let Users = require('../models/users');
 
 const bcrypt = require('bcryptjs');
-
-
-// node mailer
-function sendEmail(email, html, subject){
-  const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      port: 587,
-      secure: false, // false if http true if https i think :)
-      logger: true,
-      auth: {
-        user: process.env.EMAIL,//put your email here
-        pass: process.env.PASSWORD//put your password here
-      }
-    });
-  const mailOptions = {
-    from: 'ahmad\'s blog', // sender address
-    to: email, // list of receivers
-    subject: subject, // Subject line
-    html:html // plain text body
-  };
-  transporter.sendMail(mailOptions, function (err, info) {
-    if(err)
-      console.log('err:' + err)
-    else
-      console.log(info);
-  });
-}
 
 let controller = {};
 
@@ -74,7 +47,7 @@ controller.SignUp = (req, res)=>{
                     if (err) res.json({error: err});
                     console.log(user);
                     let html =`<p>your verification number is <code style="font-style: italic"> ${randNum} </code> </p>`
-                    sendEmail(email, html, 'verification')
+                    mailHelper.sendEmail(email, html, 'verification')
                     res.json({msg: `check ${email} to verify your account`, success: true});
                 });
               });
@@ -132,7 +105,7 @@ controller.ForgetPassword = (req, res)=>{
         err =>{
           if(err) res.json({success: flase, msg: 'something went wrong'});
           let html = `<p>got to this link to reset your password <a href="${redirectLink}?resetpassword=reset&hash=${buffer.toString('hex')}" >rest your password</a></p>`
-          sendEmail(email, html, 'reset your password')
+          mailHelper.sendEmail(email, html, 'reset your password')
           res.json({success: true, msg: 'check your email'});
         })
       })
