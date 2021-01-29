@@ -32,6 +32,7 @@ controller.SignUp = (req, res)=>{
           if (err) console.log(err);
           if (data) {
               errors.push({msg: 'this email already exists'});
+              res.json({success: false, errors})
           } else {
             let randNum = parseInt(Math.random().toString().slice(2,10));
             bcrypt.genSalt(10, (err, salt) => {
