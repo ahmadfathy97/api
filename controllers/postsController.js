@@ -178,49 +178,42 @@ controller.SpecificUserPosts = (req, res)=>{
 };
 
 controller.DeletePost = (req, res)=>{
-  if(req.user){
-    Posts.findById(req.params.id, (err, post)=>{
-      if(err) console.log(err);
-      if(post.user_id._id == req.user._id){
-        Posts.remove({_id: req.params.id}, (err)=>{
-          if(err) res.json(err);
-          res.json({msg: 'post Deleted', post_id: req.params.id});
-        });
-      } else {
-        res.json({msg: 'are you crazy?‼ ... it is not your post and you wanna delete it... fuck you nigga'});
-      }
-    });
-  } else {
-    res.json({msg: 'you must login first'});
-  }
+  Posts.findById(req.params.id, (err, post)=>{
+    if(err) console.log(err);
+    if(post.user_id == req.user._id){
+      Posts.deleteOne({_id: req.params.id}, (err)=>{
+        if(err) res.json({success: false, msg: 'something went wrong'});
+        res.json({success: true, msg: 'post Deleted', post_id: req.params.id});
+      });
+    } else {
+      res.json({msg: 'are you crazy?‼ ... it is not your post and you wanna delete it... fuck you nigga'});
+    }
+  });
+
 };
 
 controller.UpdatePost = (req, res)=>{
-  if(req.user){
-    Posts.findById(req.params.id, (err, post)=>{
-      if(err) console.log(err);
-      if(post.user_id._id == req.user._id){
-        Posts.findOneAndUpdate(
-          {_id: req.params.id},
-          {
-            $set: {
-              title: req.body.title || post.title,
-              body: req.body.body || post.body,
-              category_id: req.body.category_id || post.category_id,
-              rtl: req.body.dir || post.dir,
-              sanitizedHtml: dompurify.sanitize(marked(req.body.body))
-            }
-          }, (err)=>{
-          if(err) res.json({error: err});
-          res.json({msg: 'post Updated'});
-        });
-      } else {
-        res.json({msg: 'are you crazy?‼ ... it is not your post and you wanna edit it... fuck you nigga'});
-      }
-    });
-  } else {
-    res.json({msg: 'you must login first'});
-  }
+  Posts.findById(req.params.id, (err, post)=>{
+    if(err) console.log(err);
+    if(post.user_id == req.user._id){
+      Posts.findOneAndUpdate(
+        {_id: req.params.id},
+        {
+          $set: {
+            title: req.body.title || post.title,
+            body: req.body.body || post.body,
+            category_id: req.body.category_id || post.category_id,
+            rtl: req.body.dir || post.dir,
+            sanitizedHtml: dompurify.sanitize(marked(req.body.body))
+          }
+        }, (err)=>{
+        if(err) res.json({error: err});
+        res.json({msg: 'post Updated'});
+      });
+    } else {
+      res.json({msg: 'are you crazy?‼ ... it is not your post and you wanna edit it... fuck you nigga'});
+    }
+  });
 };
 
 

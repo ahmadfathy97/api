@@ -23,10 +23,10 @@ router.get('/', verify, categoriesController.AllCategories);
 
 router.get('/:name', verify, categoriesController.SpecificCategory);
 
-router.post('/', verify, uploadImages.single('pic'), categoriesController.AddCategory);
+// router.post('/', verify, uploadImages.single('pic'), categoriesController.AddCategory);
 
-router.put('/:id', verify, categoriesController.EditCategoty);
+// router.put('/:id', verify, categoriesController.EditCategoty);
 
-router.delete('/:id', verify, categoriesController.DeletCategory);
+// router.delete('/:id', verify, categoriesController.DeletCategory);
 
 module.exports = router;

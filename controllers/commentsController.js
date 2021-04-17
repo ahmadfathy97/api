@@ -9,7 +9,7 @@ controller.DeleteComment = (req, res)=>{
       res.json({success: false, msg: 'something went wrong'});
     } else if (comment.user_id == req.user._id){
       Comments.remove({_id: req.params.comment_id}, (err)=>{
-        if (err) res.json({msg: err});
+        if (err) res.json({success: false, msg: 'something went wrong'});
         res.json({success: true, msg: 'comment deleted'});
       });
     } else {
