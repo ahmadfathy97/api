@@ -32,25 +32,21 @@ controller.MakeNotificationsReaded = (req, res)=>{
 
 
 controller.SpecificUser = (req, res)=>{
-  if(req.user){
-    Users.findById(req.params.id)
-    .select('-password -notifications -resetPassHash -resetPassExp -verificationNum')
-    .exec((err, user)=>{
-      if (err) res.json({success: false, msg : 'something went wrong'});
-      if(user){
-        if(user.archive) {
-          res.json({success: false, msg: 'sorry this account deleted'});
-        }
-        else {
-          let customUser = user.toJSON();
-          if(customUser.pic) customUser.pic = `http://${req.hostname}/${customUser.pic}`;
-          res.json({success: true, user: customUser});
-        }
+  Users.findById(req.params.id)
+  .select('-password -notifications -resetPassHash -resetPassExp -verificationNum -verified')
+  .exec((err, user)=>{
+    if (err) res.json({success: false, msg : 'something went wrong'});
+    if(user){
+      if(user.archive) {
+        res.json({success: false, msg: 'sorry this account deleted'});
       }
-    });
-  } else {
-    res.json({success: false, msg : 'you must login first'});
-  }
+      else {
+        let customUser = user.toJSON();
+        if(customUser.pic) customUser.pic = `http://${req.hostname}/${customUser.pic}`;
+        res.json({success: true, user: customUser});
+      }
+    }
+  });
 };
 
 
@@ -78,121 +74,109 @@ controller.VerifyEmail = (req, res)=>{
 
 
 controller.UpdateUser = (req, res)=>{
-  if(req.user){
-    let pic;
-    Users.findById(req.params.id, (err, user)=> {
-      if(req.file) {
-        pic = req.file.path.replace('public', '');
-        fs.unlink('public/' +user.pic, (err)=>{
-          if(err) console.log(err);
+  let pic;
+  Users.findById(req.params.id, (err, user)=> {
+    if(req.file) {
+      pic = req.file.path.replace('public', '');
+      fs.unlink('public/' +user.pic, (err)=>{
+        if(err) console.log(err);
+      })
+    }
+    if(err) res.json({msg: err});
+    if(user._id == req.user._id){
+      Users.findOneAndUpdate(
+        {_id: req.params.id},
+        {
+          $set: {
+            username: req.body.username || user.username,
+            email: req.body.email || user.email,
+            pic: pic || user.pic,
+            info: req.body.info || user.info,
+            dayOfBirth: req.body.dayOfBirth || user.dayOfBirth,
+            gender: req.body.gender || user.gender,
+            // admin: req.body.admin || false
+          }
+        }, (err)=>{
+        if(err) res.json({error: err});
+        Users.findById(req.params.id, (err, newUser)=>{
+          if (err) res.json({error : err});
+          if(user.archive) {
+            res.json({msg: 'sorry this account deleted'});
+          } else{
+          let customUser = newUser.toJSON();
+          if(customUser.password) delete customUser.password;
+          if(customUser.notifications) delete customUser.notifications;
+          if(customUser.pic) customUser.pic = `http://${req.hostname}/${customUser.pic}`;
+          res.json(customUser);
+          }
         })
-      }
-      if(err) res.json({msg: err});
-      if(user._id == req.user._id){
-        Users.findOneAndUpdate(
-          {_id: req.params.id},
-          {
-            $set: {
-              username: req.body.username || user.username,
-              email: req.body.email || user.email,
-              pic: pic || user.pic,
-              info: req.body.info || user.info,
-              dayOfBirth: req.body.dayOfBirth || user.dayOfBirth,
-              gender: req.body.gender || user.gender,
-              // admin: req.body.admin || false
-            }
-          }, (err)=>{
-          if(err) res.json({error: err});
-          Users.findById(req.params.id, (err, newUser)=>{
-            if (err) res.json({error : err});
-            if(user.archive) {
-              res.json({msg: 'sorry this account deleted'});
-            } else{
-            let customUser = newUser.toJSON();
-            if(customUser.password) delete customUser.password;
-            if(customUser.notifications) delete customUser.notifications;
-            if(customUser.pic) customUser.pic = `http://${req.hostname}/${customUser.pic}`;
-            res.json(customUser);
-            }
-          })
-        });
-      } else {
-        res.json({msg: 'are you crazy?‼ ... it is not your account and you wanna edit it... fuck you nigga'});
-      }
-    });
-  } else {
-    res.json({msg: 'you must login first'});
-  }
+      });
+    } else {
+      res.json({success: false, msg: 'so cute ☺'});
+    }
+  });
 };
 
 
 controller.ChangePassword = (req, res)=>{
-  if(req.user){
-    Users.findById(req.params.id, (err, user)=> {
-      if(err) res.json({msg: err});
-      if(user._id == req.user._id){
-        let password = req.body.password;
-        let oldPassword = req.body.oldPassword;
-        if(password && oldPassword){
-          bcrypt.compare(oldPassword, user.password, (err, isMatch) => {
-              if (err) res.json({error:err});
-              if (isMatch) {
-                bcrypt.genSalt(10, (err, salt)=>{
+  Users.findById(req.params.id, (err, user)=> {
+    if(err) res.json({msg: err});
+    if(user._id == req.user._id){
+      let password = req.body.password;
+      let oldPassword = req.body.oldPassword;
+      if(password && oldPassword){
+        bcrypt.compare(oldPassword, user.password, (err, isMatch) => {
+            if (err) res.json({error:err});
+            if (isMatch) {
+              bcrypt.genSalt(10, (err, salt)=>{
+                if (err) res.json({msg: err})
+                bcrypt.hash(password, salt, (err, hash)=>{
                   if (err) res.json({msg: err})
-                  bcrypt.hash(password, salt, (err, hash)=>{
-                    if (err) res.json({msg: err})
-                    password = hash;
-                    Users.findOneAndUpdate(
-                      {_id: req.params.id},
-                      {
-                        $set: {
-                          password: password
-                        }
-                      }, (err)=>{
-                      if(err) res.json({error12: err});
-                      res.json({msg: 'password Updated'});
-                    });
+                  password = hash;
+                  Users.findOneAndUpdate(
+                    {_id: req.params.id},
+                    {
+                      $set: {
+                        password: password
+                      }
+                    }, (err)=>{
+                    if(err) res.json({error12: err});
+                    res.json({msg: 'password Updated'});
                   });
                 });
-              } else {
-                  res.json({msg: 'old password field does not match the old password'});
-              }
-          });
-        } else {
-          res.json({msg: 'all fields required'});
-        }
+              });
+            } else {
+                res.json({msg: 'old password field does not match the old password'});
+            }
+        });
       } else {
-        res.json({msg: 'are you crazy?‼ ... it is not your account and you wanna edit it... fuck you nigga'});
+        res.json({msg: 'all fields required'});
       }
-    });
-  } else {
-    res.json({msg: 'you must login first'});
-  }
+    } else {
+      res.json({success: false, msg: 'so cute ☺'});
+    }
+  });
 };
 
 controller.DeleteUser = (req, res)=>{
-  if(req.user){
-    Users.findById(req.params.id, (err, user)=>{
-      if(err) res.json({msg: err});
-      if(user._id == req.user._id){
-        Users.findOneAndUpdate(
-          {_id: req.params.id},
-          {$set: {
-              archive: true
-            }
-          },
-          (err)=>{
-            if(err) res.json({msg: err});
-            res.json({msg: 'user Deleted'});
+  Users.findById(req.params.id, (err, user)=>{
+    if(err) res.json({msg: err});
+    if(user._id == req.user._id){
+      Users.findOneAndUpdate(
+        {_id: req.params.id},
+        {$set: {
+            archive: true
           }
-        )
-      } else {
-        res.json({msg: 'are you crazy?‼ ... it is not your account and you wanna delete it... fuck you nigga'});
-      }
-    });
-  } else {
-    res.json({msg: 'you must login first'});
-  }
+        },
+        (err)=>{
+          if(err) res.json({msg: err});
+          res.json({msg: 'user Deleted'});
+        }
+      )
+    } else {
+      res.json({success: false, msg: 'so cute ☺'});
+    }
+  });
 };
 
 

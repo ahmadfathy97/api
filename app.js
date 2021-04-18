@@ -24,7 +24,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 //connect with database
 mongoose.Promise = global.Promise;
-mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true});
+mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false});
 mongoose.connection.on('connected', () => {
   console.log(`============================= \n|| Database  Is  Connected ||\n============================= \n`);
 });

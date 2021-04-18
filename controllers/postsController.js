@@ -12,162 +12,148 @@ const dompurify = createDomPurify(new JSDOM().window)
 let controller = {};
 
 controller.FetchAll = (req, res)=>{
-  console.log(req.user);
-  if(req.user){
-    Posts.find({})
-    .populate('user_id')
-    .populate('category_id')
-    .populate({
-      path: 'comments',
-      populate: {
-        path: 'user_id',
-        select: ['username', '_id', 'pic']
-      }
-    })
-    .exec((err, posts)=>{
-      if(err) console.log(err);
-      let customPosts = [];
-      posts.forEach((post)=>{
-        let customPost = post.toJSON();
-        if(customPost.user_id.password) delete customPost.user_id.password;
-        if(customPost.user_id.notifications) delete customPost.user_id.notifications;
-        customPost.comments.forEach((comment)=>{
-          if(comment.user_id._id == req.user._id) comment.owner = true;
-          if(comment.user_id.password) delete comment.user_id.password;
-        });
-        if(customPost.user_id._id == req.user._id) customPost.owner = true;
-        customPosts.push(customPost);
+  Posts.find({})
+  .populate({
+    path:'user_id',
+    select: ['username', 'pic']
+  })
+  .populate('category_id')
+  .populate({
+    path: 'comments',
+    populate: {
+      path: 'user_id',
+      select: ['username', 'pic']
+    }
+  })
+  .exec((err, posts)=>{
+    if(err) console.log(err);
+    let customPosts = [];
+    posts.forEach((post)=>{
+      let customPost = post.toJSON();
+      customPost.comments.forEach((comment)=>{
+        if(comment.user_id._id == req.user._id) comment.owner = true;
       });
-      res.json(customPosts);
+      if(customPost.user_id._id == req.user._id) customPost.owner = true;
+      customPosts.push(customPost);
     });
-  } else {
-    res.json({msg: 'you must login first'});
-  }
+    res.json(customPosts);
+  });
 }
 
 
 controller.AddPost = (req, res)=>{
-  if(req.user){
-    let newPost = {};
-    newPost.title = req.body.title;
-    newPost.body = req.body.body;
-    newPost.dir = req.body.dir;
-    newPost.created_at = req.body.created_at;
-    newPost.user_id = req.user._id;
-    newPost.category_id = req.body.category_id;
-    newPost.sanitizedHtml = dompurify.sanitize(marked(req.body.body))
-    if(!newPost.title || !newPost.body || !newPost.dir || !newPost.created_at || !newPost.category_id){
-      res.json({success: false, 'msg': 'all fields are required'})
-    } else{
-      Posts(newPost).save((err, post)=>{
-        if (err) {
-          console.log(err);
-          res.json({msg: 'post not created'});
-        };
-        let owners;
-        Users.findById(req.user._id, (err, user)=>{
-          if (err) console.log(err);
-          Notifications({
-            noti_type: 'new post',
-            owner: user.followers,
-            user_id: req.user._id,
-            item_id: post._id,
-            noti_text: 'created new post',
-            noti_time: post.created_at
-            })
-            .save((err, noti)=>{
-              if(err) console.log(err);
-              Users.updateMany(
-                {_id: {$in: owners} },
-                {$push:
-                  {notifications: noti._id}
-                },
-              (err, data) => {
-                if(err) console.log(err);
-                console.log(data);
-              })
-            })
-        });
-        res.json({success: true, msg: 'post created', post_id: post._id});
-      });
-    }
+  let newPost = {};
+  newPost.title = req.body.title;
+  newPost.body = req.body.body;
+  newPost.dir = req.body.dir;
+  newPost.created_at = req.body.created_at;
+  newPost.user_id = req.user._id;
+  newPost.category_id = req.body.category_id;
+  newPost.sanitizedHtml = dompurify.sanitize(marked(req.body.body))
+  if(!newPost.title || !newPost.body || !newPost.dir || !newPost.created_at || !newPost.category_id){
+    res.json({success: false, 'msg': 'all fields are required'})
   } else{
-    res.json({success: false, msg: 'you must login first'});
+    Posts(newPost).save((err, post)=>{
+      if (err) {
+        console.log(err);
+        res.json({msg: 'post not created'});
+      };
+      let owners;
+      Users.findById(req.user._id, (err, user)=>{
+        if (err) console.log(err);
+        Notifications({
+          noti_type: 'new post',
+          owner: user.followers,
+          user_id: req.user._id,
+          item_id: post._id,
+          noti_text: 'created new post',
+          noti_time: post.created_at
+          })
+          .save((err, noti)=>{
+            if(err) console.log(err);
+            Users.updateMany(
+              {_id: {$in: user.followers} },
+              {$push:
+                {notifications: noti._id}
+              },
+            (err, data) => {
+              if(err) console.log(err);
+              console.log(data);
+            })
+          })
+      });
+      res.json({success: true, msg: 'post created', post_id: post._id});
+    });
   }
 }
 
 controller.Latest = (req, res)=>{
-  if(req.user){
-    Posts.find({})
-    .limit(5)
-    .sort({'created_at': -1})
-    .populate('user_id')
-    .populate('category_id')
-    .populate({
-      path: 'comments',
-      populate: {
-        path: 'user_id',
-        select: ['username', '_id', 'pic']
-      }
-    })
-    .exec((err, posts)=>{
-      if(err) console.log(err);
-      let customPosts = [];
-      posts.forEach((post)=>{
-        if(post){
-          let customPost = post.toJSON();
-          if(customPost.user_id.password) delete customPost.user_id.password;
-          if(customPost.user_id.notifications) delete customPost.user_id.notifications;
-          customPost.comments.forEach((comment)=>{
-            if(comment.user_id._id == req.user._id) comment.owner = true;
-            if(comment.user_id.password) delete comment.user_id.password;
-          });
-          if(customPost.user_id._id == req.user._id) customPost.owner = true;
-          customPosts.push(customPost);
-        }
-      });
-      res.json(customPosts);
-    });
-  } else {
-    res.json({msg: 'you must login first'});
-  }
-};
-
-controller.SpecificPost = (req, res)=>{
-  if(req.user){
-    Posts.findById(req.params.id)
-    .populate('user_id')
-    .populate('category_id')
-    .populate({
-      path: 'comments',
-      populate: {
-        path: 'user_id',
-        select: ['username', '_id', 'pic']
-      }
-    })
-    .exec((err, post)=>{
-      if(err) console.log(err);
+  Posts.find({})
+  .limit(5)
+  .sort({'created_at': -1})
+  .populate({
+    path:'user_id',
+    select: ['username', 'pic']
+  })
+  .populate('category_id')
+  .populate({
+    path: 'comments',
+    populate: {
+      path: 'user_id',
+      select: ['username', 'pic']
+    }
+  })
+  .exec((err, posts)=>{
+    if(err) console.log(err);
+    let customPosts = [];
+    posts.forEach((post)=>{
       if(post){
         let customPost = post.toJSON();
-        if(customPost.user_id.password) delete customPost.user_id.password;
-        if(customPost.user_id.notifications) delete customPost.user_id.notifications;
-
         customPost.comments.forEach((comment)=>{
-          if(comment.user_id.password) delete comment.user_id.password;
           if(comment.user_id._id == req.user._id) comment.owner = true;
         });
         if(customPost.user_id._id == req.user._id) customPost.owner = true;
-        res.json(customPost);
+        customPosts.push(customPost);
       }
     });
-  } else {
-    res.json({msg: 'you must login first'});
-  }
+    res.json(customPosts);
+  });
+};
+
+controller.SpecificPost = (req, res)=>{
+  Posts.findById(req.params.id)
+  .populate({
+    path:'user_id',
+    select: ['username', 'pic']
+  })
+  .populate('category_id')
+  .populate({
+    path: 'comments',
+    populate: {
+      path: 'user_id',
+      select: ['username', 'pic']
+    }
+  })
+  .exec((err, post)=>{
+    if(err) console.log(err);
+    if(post){
+      let customPost = post.toJSON();
+
+      customPost.comments.forEach((comment)=>{
+        if(comment.user_id._id == req.user._id) comment.owner = true;
+      });
+      if(customPost.user_id._id == req.user._id) customPost.owner = true;
+      res.json(customPost);
+    }
+  });
 }
 
 
 controller.SpecificUserPosts = (req, res)=>{
-  Posts.find({user_id : req.params.id}, (err, posts)=>{
+  Posts.find({user_id : req.params.id})
+  .sort({'created_at': -1})
+  .select('created_at title')
+  .exec((err, posts)=>{
     if (err) res.json({success: false, msg: 'something went wrong'});
     else if(posts){
       res.json({success: true, posts});
@@ -186,7 +172,7 @@ controller.DeletePost = (req, res)=>{
         res.json({success: true, msg: 'post Deleted', post_id: req.params.id});
       });
     } else {
-      res.json({msg: 'are you crazy?‼ ... it is not your post and you wanna delete it... fuck you nigga'});
+      res.json({success: false, msg: 'so cute ☺'});
     }
   });
 
@@ -211,7 +197,7 @@ controller.UpdatePost = (req, res)=>{
         res.json({msg: 'post Updated'});
       });
     } else {
-      res.json({msg: 'are you crazy?‼ ... it is not your post and you wanna edit it... fuck you nigga'});
+      res.json({success: false, msg: 'so cute ☺'});
     }
   });
 };

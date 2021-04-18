@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 const dotEnv = require('dotenv');
+const fs = require('fs');
 dotEnv.config();
 
 const crypto = require('crypto');
@@ -27,12 +28,14 @@ controller.SignUp = (req, res)=>{
       errors.push({msg: "this is not an email"});
     }
     if(!errors.length){
-      console.log(req.body,req.file);
       Users.findOne({ email: email }, (err, data) => {
-          if (err) console.log(err);
-          if (data) {
-              errors.push({msg: 'this email already exists'});
-              res.json({success: false, errors})
+          if (err) res.json({success: false, msg: 'something went wrong'})
+          else if (data) {
+            fs.unlink(req.file.path, err=>{
+              if (err) console.log(err);
+            })
+            errors.push({msg: 'this email already exists'});
+            res.json({success: false, errors})
           } else {
             let randNum = parseInt(Math.random().toString().slice(2,10));
             bcrypt.genSalt(10, (err, salt) => {
@@ -56,6 +59,9 @@ controller.SignUp = (req, res)=>{
           }
       });
     } else{
+      fs.unlink(req.file.path, err=>{
+        if (err) console.log(err);
+      })
       res.json({success: false, errors})
     }
   } else{
@@ -68,21 +74,21 @@ controller.LogIn = (req, res)=>{
     let query = { email: req.body.email };
     Users.findOne(query, (err, user) => {
         if (err) res.json({success: false, msg:'something went wrong'});
-        if (user) {
+        else if (user) {
           bcrypt.compare(req.body.password, user.password, (err, isMatch) => {
               if (err) res.json({success: false, msg:'something went wrong'});
-              if (isMatch && user.verified) {
+              else if (isMatch && user.verified) {
                   const token = jwt.sign({_id: user._id}, process.env.SECRET_TOKEN);
                   res.json({success: true, auth_token: token, id: user._id});
                   //res.header('auth_token', token).send(token);
               } else if(isMatch && !user.verified) {
                   res.json({success: false, notVerified: true,msg: `you have to verify you email check ${user.email}` });
               } else {
-                  res.json({success: false, msg: 'wrong password'});
+                  res.json({success: false, msg: 'wrong email or password'});
               }
           });
         } else {
-            res.json({success: false, msg: 'wrong email'});
+            res.json({success: false, msg: 'wrong email or password'});
         }
     });
   }
@@ -105,13 +111,15 @@ controller.ForgetPassword = (req, res)=>{
         },
         err =>{
           if(err) res.json({success: flase, msg: 'something went wrong'});
-          let html = `<p>got to this link to reset your password <a href="${redirectLink}?resetpassword=reset&hash=${buffer.toString('hex')}" >rest your password</a></p>`
-          mailHelper.sendEmail(email, html, 'reset your password')
-          res.json({success: true, msg: 'check your email'});
+          else {
+            let html = `<p>got to this link to reset your password <a href="${redirectLink}?resetpassword=reset&hash=${buffer.toString('hex')}" >rest your password</a></p>`
+            mailHelper.sendEmail(email, html, 'reset your password')
+            res.json({success: true, msg: 'check your email'});
+          }
         })
       })
     } else {
-      res.json({success: false, msg: 'the email does not exist'});
+      res.json({success: false, msg: 'this email does not exist'});
     }
   })
 };
@@ -122,14 +130,13 @@ controller.ResetPassword = (req, res)=>{
   if(!password.length || !confirmPassword.length){
     error = 'all fields are required'
   } else if(password !== confirmPassword){
-    error = 'password does not match'
+    error = 'passwords don\'t match'
   }
 
   if(!error.length){
-    Users.findOne({resetPassHash: req.params.hash}, (err, user)=>{
-      console.log(user.resetPassExp, Date.now())
+    Users.findOne({resetPassHash: req.params.hash, resetPassExp: {$gt: Date.now()}}, (err, user)=>{
       if(err) res.json({success: false, msg: 'something went wrong'});
-      if(user && user.resetPassExp > Date.now() ){
+      else if (user){
         bcrypt.genSalt(10, (err, salt) => {
           bcrypt.hash(password, salt, (err, hash) => {
             Users.update({_id:user._id}, {
@@ -137,15 +144,12 @@ controller.ResetPassword = (req, res)=>{
             },
             err =>{
               if(err) res.json({success: false, msg: 'something went wrong'});
-              res.json({success: true, msg: 'you can login with the new password'});
+              else res.json({success: true, msg: 'you can login with the new password'});
             })
           })
         })
-      } else if(user && user.resetPassExp <= Date.now() ){
-        res.json({success: false, msg: 'this link expired'});
-      } else{
-        res.json({success: false, msg: 'something went wrong'});
       }
+      else res.json({success: false, msg: 'this link expired'});
     })
   } else{
     res.json({success: false, msg: error});
@@ -153,6 +157,7 @@ controller.ResetPassword = (req, res)=>{
 };
 
 controller.LogOut = (req, res)=>{
+  // maybe I should add something like a black list for tokens that logged out
   res.json({msg: 'you logged out'});
 }
 module.exports = controller;

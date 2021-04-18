@@ -74,7 +74,7 @@ controller.SpecificCategory = (req, res)=>{
 // }
 
 // controller.DeletCategory = (req, res)=>{
-//   Categories.remove({_id: req.params._id}, (err)=>{
+//   Categories.deleteOne({_id: req.params._id}, (err)=>{
 //     if(err) res.json({success: false, msg: 'something went wrong'});
 //     else res.json({success: true, msg: 'category deleted'});
 //   });
