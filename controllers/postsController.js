@@ -135,8 +135,8 @@ controller.SpecificPost = (req, res)=>{
     }
   })
   .exec((err, post)=>{
-    if(err) console.log(err);
-    if(post){
+    if(err) res.json({success: false, msg: 'something went wring'});
+    else if(post){
       let customPost = post.toJSON();
 
       customPost.comments.forEach((comment)=>{
@@ -164,12 +164,17 @@ controller.SpecificUserPosts = (req, res)=>{
 };
 
 controller.DeletePost = (req, res)=>{
-  Posts.findById(req.params.id, (err, post)=>{
+  Posts.findById(req.params.id)
+  .select('comments user_id')
+  .exec((err, post)=>{
     if(err) console.log(err);
-    if(post.user_id == req.user._id){
+    if(post && post.user_id == req.user._id){
       Posts.deleteOne({_id: req.params.id}, (err)=>{
         if(err) res.json({success: false, msg: 'something went wrong'});
-        res.json({success: true, msg: 'post Deleted', post_id: req.params.id});
+        Comments.deleteMany({_id: { $in: post.comments}}, err =>{
+          if(err) console.log(err);
+          res.json({success: true, msg: 'post Deleted', post_id: req.params.id});
+        })
       });
     } else {
       res.json({success: false, msg: 'so cute ☺'});
@@ -215,29 +220,31 @@ controller.LikeOrUnlike = (req, res)=>{
           }
         },
         (err, post) => {
-          if(err) res.json({msg: err});
-          Notifications(
-            {
-              noti_type: 'like',
-              owner: post.user_id,
-              user_id: req.user._id,
-              item_id: req.params.id,
-              noti_text: 'liked your post',
-              noti_time: req.body.time
-            }).save((err, noti)=>{
-              if (err) console.log(err);
-              Users.findOneAndUpdate(
-                {_id: post.user_id},
-                {$push:{
-                  notifications: noti._id
-                }},
-                err=>{
+          if(err) res.json({success: false, msg: 'something went wrong'});
+          if(req.user._id.toString() !== post.user_id.toString()){
+            Notifications(
+              {
+                noti_type: 'like',
+                owner: post.user_id,
+                user_id: req.user._id,
+                item_id: req.params.id,
+                noti_text: 'liked your post',
+                noti_time: req.body.time
+              }).save((err, noti)=>{
                 if (err) console.log(err);
-                Posts.findById(req.params.id, (err, post)=>{
-                  if(err) console.log(err);
-                  res.json({likes: post.likes, post_id: req.params.id});
+                Users.findOneAndUpdate(
+                  {_id: post.user_id},
+                  {$push:{
+                    notifications: noti._id
+                  }},
+                  err=>{
+                  if (err) console.log(err);
                 });
               });
+            }
+            Posts.findById(req.params.id, (err, post)=>{
+              if(err) console.log(err);
+              res.json({likes: post.likes, post_id: req.params.id});
             });
         });
     } else {
@@ -279,7 +286,6 @@ controller.AddComment = (req, res)=>{
       .populate('user_id')
       .exec((err, comment)=>{
         if (err) console.log(err);
-        res.json({comment: comment, post_id: req.params.id})
         Posts.findById(req.params.id)
         .populate('comments')
         .exec((err, post)=>{
@@ -315,6 +321,7 @@ controller.AddComment = (req, res)=>{
             })
           }
         })
+        res.json({comment: comment, post_id: req.params.id})
       })
     })
   });
