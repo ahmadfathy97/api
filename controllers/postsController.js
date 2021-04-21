@@ -55,11 +55,11 @@ controller.AddPost = (req, res)=>{
   } else{
     Posts(newPost).save((err, post)=>{
       if (err) {
-        console.log(err);
-        res.json({msg: 'post not created'});
+        res.json({success: false, msg: 'post not created'});
       };
-      let owners;
-      Users.findById(req.user._id, (err, user)=>{
+      Users.findById(req.user._id)
+      .select('followers')
+      .exec((err, user)=>{
         if (err) console.log(err);
         Notifications({
           noti_type: 'new post',
@@ -90,7 +90,7 @@ controller.AddPost = (req, res)=>{
 controller.Latest = (req, res)=>{
   Posts.find({})
   .limit(5)
-  .sort({'created_at': -1})
+  .sort({'createdAt': -1})
   .populate({
     path:'user_id',
     select: ['username', 'pic']
@@ -151,7 +151,7 @@ controller.SpecificPost = (req, res)=>{
 
 controller.SpecificUserPosts = (req, res)=>{
   Posts.find({user_id : req.params.id})
-  .sort({'created_at': -1})
+  .sort({'createdAt': -1})
   .select('created_at title')
   .exec((err, posts)=>{
     if (err) res.json({success: false, msg: 'something went wrong'});
@@ -284,28 +284,36 @@ controller.AddComment = (req, res)=>{
         .populate('comments')
         .exec((err, post)=>{
           if (err) console.log(err);
-          let usersWhoCommented = post.comments.map((comment)=>{
-            return comment.user_id !== req.user._id ? comment.user_id : null;
+          let notifiedPersons = [];
+          post.comments.forEach((c)=>{
+             if(c.user_id.toString() != req.user._id.toString()){
+               notifiedPersons.push(c.user_id.toString());
+             }
           });
-          Notifications({
-            noti_type: 'comment',
-            owner: [...usersWhoCommented, post.user_id],
-            user_id: req.user._id,
-            item_id: req.params.id,
-            noti_text: 'commented on a post',
-            noti_time: req.body.comment_time
-          })
-          .save((err, noti)=>{
-            if(err) console.log(err);
-            Users.updateMany({_id: {$in: [...usersWhoCommented, post.user_id]}},
-              {$push: {
-                notifications: noti._id
-              }},
-              (err, data) =>{
-                if (err) console.log(err);
-                console.log(data);
-              })
-          })
+          if(req.user._id.toString() != post.user_id.toString()) notifiedPersons.push(post.user_id.toString())
+          let nps = new Set(notifiedPersons);
+          console.log([...nps]);
+          if([...nps].length){
+            Notifications({
+              noti_type: 'comment',
+              owner: [...nps],
+              user_id: req.user._id,
+              item_id: req.params.id,
+              noti_text: 'commented on a post',
+              noti_time: req.body.comment_time
+            })
+            .save((err, noti)=>{
+              if(err) console.log(err);
+              Users.updateMany({_id: {$in: [...nps]}},
+                {$push: {
+                  notifications: noti._id
+                }},
+                (err, data) =>{
+                  if (err) console.log(err);
+                  console.log(data);
+                })
+            })
+          }
         })
       })
     })

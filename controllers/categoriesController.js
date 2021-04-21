@@ -9,9 +9,7 @@ controller.AllCategories = (req, res)=>{
     else if(categories){
       categories.forEach((category)=>{
         category.category_pic = `http://${req.hostname}/${category.category_pic}`;
-        console.log(category.category_pic);
       })
-      console.log(categories);
       res.json({success: true, categories});
     }
   });

@@ -8,7 +8,7 @@ let controller = {};
 
 controller.FetchAllNotifications = (req, res)=>{
   Notifications.find({owner: req.user._id})
-  .sort({noti_time: -1})
+  .sort({createdAt: -1})
   .populate({
     path: 'user_id',
     select: ['username', '_id', 'pic']
@@ -181,8 +181,10 @@ controller.DeleteUser = (req, res)=>{
 
 
 controller.FollowOrUnfollow = (req, res)=>{
-  Users.findById(req.params.id, (err, User)=>{
-    if(err) res.json({msg: err});
+  Users.findById(req.params.id)
+  .select('followers')
+  .exec((err, User)=>{
+    if(err) res.json({success: false, msg: 'something went wrong'});
     if(User.followers.indexOf(req.user._id) < 0){
       Users.findOneAndUpdate(
         {_id: req.params.id},
@@ -201,13 +203,13 @@ controller.FollowOrUnfollow = (req, res)=>{
               }
             },
           err => {
-            if(err) res.json({msg: err});
+            if(err) res.json({success: false, msg: err});
             Notifications(
               {
                 noti_type: 'follow',
                 owner: req.params.id,
                 user_id: req.user._id,
-                item_id: req.params.id,
+                item_id: req.user._id,
                 noti_text: 'is following you',
                 noti_time: req.body.time
               }
