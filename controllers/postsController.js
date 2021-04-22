@@ -1,3 +1,8 @@
+/**
+I am thinkg about fetching the posts without its comments
+and make another endpoint to fetch its comments 
+**/
+
 //models
 let Posts = require('../models/posts');
 let Comments = require('../models/comments');
@@ -186,7 +191,7 @@ controller.DeletePost = (req, res)=>{
 controller.UpdatePost = (req, res)=>{
   Posts.findById(req.params.id, (err, post)=>{
     if(err) console.log(err);
-    if(post.user_id == req.user._id){
+    if(post && post.user_id == req.user._id){
       Posts.findOneAndUpdate(
         {_id: req.params.id},
         {
@@ -210,8 +215,8 @@ controller.UpdatePost = (req, res)=>{
 
 controller.LikeOrUnlike = (req, res)=>{
   Posts.findById(req.params.id, (err, post)=>{
-    if(err) res.json({msg: err});
-    if(post.likes.indexOf(req.user._id) < 0){
+    if(err) res.json({success: false, msg: 'something went wrong'});
+    else if(post && post.likes.indexOf(req.user._id) < 0){
       Posts.findOneAndUpdate(
         {_id: req.params.id},
         {
@@ -247,7 +252,7 @@ controller.LikeOrUnlike = (req, res)=>{
               res.json({likes: post.likes, post_id: req.params.id});
             });
         });
-    } else {
+    } else if(post && post.likes.indexOf(req.user._id) >= 0) {
       Posts.findOneAndUpdate(
         {_id: req.params.id},
         {
