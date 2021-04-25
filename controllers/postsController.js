@@ -1,6 +1,6 @@
 /**
 I am thinkg about fetching the posts without its comments
-and make another endpoint to fetch its comments 
+and make another endpoint to fetch its comments
 **/
 
 //models
@@ -288,7 +288,10 @@ controller.AddComment = (req, res)=>{
     err => {
       if(err) console.log(err);
       Comments.findById(comment._id)
-      .populate('user_id')
+      .populate({
+        path: 'user_id',
+        select: ['username', 'pic']
+      })
       .exec((err, comment)=>{
         if (err) console.log(err);
         Posts.findById(req.params.id)
