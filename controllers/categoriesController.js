@@ -33,6 +33,11 @@ controller.SpecificCategory = (req, res)=>{
         }
       })
       .exec((err, posts)=>{
+        posts.forEach(post=>{
+          post.comments.forEach(comment=>{
+            comment.user_id.pic = `http://${req.hostname}/${comment.user_id.pic}`;
+          })
+        })
         category.category_pic = `http://${req.hostname}/${category.category_pic}`;
         res.json({success: true, category: category, posts: posts});
       })
