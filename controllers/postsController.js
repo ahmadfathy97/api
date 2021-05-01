@@ -159,7 +159,7 @@ controller.SpecificPost = (req, res)=>{
 controller.SpecificUserPosts = (req, res)=>{
   Posts.find({user_id : req.params.id})
   .sort({'createdAt': -1})
-  .select('created_at title')
+  .select('createdAt created_at title')
   .exec((err, posts)=>{
     if (err) res.json({success: false, msg: 'something went wrong'});
     else if(posts){

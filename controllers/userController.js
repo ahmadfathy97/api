@@ -14,7 +14,15 @@ controller.FetchAllNotifications = (req, res)=>{
     select: ['username', '_id', 'pic']
   })
   .exec((err, notis)=>{
-    res.json({notis: notis})
+    let customNotis = [];
+    notis.forEach((noti)=>{
+      if(noti){
+        let customNoti = noti.toJSON();
+        customNoti.user_id.pic = `http://${req.hostname}/${customNoti.user_id.pic}`;
+        customNotis.push(customNoti);
+      }
+    });
+    res.json({notis: customNotis})
   });
 };
 

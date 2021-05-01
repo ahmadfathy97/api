@@ -20,26 +20,12 @@ controller.SpecificCategory = (req, res)=>{
     if (err) res.json({success: false, msg: 'something went wrong'});
     else {
       Posts.find({category_id: category._id})
-      .populate({
-        path: 'user_id',
-        select: ['username', 'pic']
-      })
-      .populate('category_id')
-      .populate({
-        path: 'comments',
-        populate: {
-          path: 'user_id',
-          select: ['username', 'pic']
-        }
-      })
+      .limit(100)
+      .select('createdAt created_at title')
+      .sort({'createdAt': -1})
       .exec((err, posts)=>{
-        posts.forEach(post=>{
-          post.comments.forEach(comment=>{
-            comment.user_id.pic = `http://${req.hostname}/${comment.user_id.pic}`;
-          })
-        })
         category.category_pic = `http://${req.hostname}/${category.category_pic}`;
-        res.json({success: true, category: category, posts: posts});
+        res.json({success: true, category: category, posts: posts || []});
       })
     }
   });
