@@ -67,7 +67,7 @@ controller.AddPost = (req, res)=>{
       .exec((err, user)=>{
         if (err) console.log(err);
         Notifications({
-          noti_type: 'new post',
+          noti_type: 'new-post',
           owner: user.followers,
           user_id: req.user._id,
           item_id: post._id,
@@ -115,7 +115,7 @@ controller.Latest = (req, res)=>{
       if(post){
         let customPost = post.toJSON();
         customPost.comments.forEach((comment)=>{
-          comment.user_id.pic = `http://${req.hostname}/${comment.user_id.pic}`;
+          comment.user_id.pic = `https://${req.hostname}/${comment.user_id.pic}`;
           if(comment.user_id._id == req.user._id) comment.owner = true;
         });
         if(customPost.user_id._id == req.user._id) customPost.owner = true;
@@ -146,7 +146,7 @@ controller.SpecificPost = (req, res)=>{
       let customPost = post.toJSON();
 
       customPost.comments.forEach((comment)=>{
-        comment.user_id.pic = `http://${req.hostname}/${comment.user_id.pic}`;
+        comment.user_id.pic = `https://${req.hostname}/${comment.user_id.pic}`;
         if(comment.user_id._id == req.user._id) comment.owner = true;
       });
       if(customPost.user_id._id == req.user._id) customPost.owner = true;
@@ -295,7 +295,7 @@ controller.AddComment = (req, res)=>{
         select: ['username', 'pic']
       })
       .exec((err, comment)=>{
-        comment.user_id.pic = `http://${req.hostname}/${comment.user_id.pic}`;
+        comment.user_id.pic = `https://${req.hostname}/${comment.user_id.pic}`;
         if (err) console.log(err);
         Posts.findById(req.params.id)
         .populate('comments')

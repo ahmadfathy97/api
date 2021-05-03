@@ -16,6 +16,24 @@ router.use((req, res, next)=>{
       }
     }
   }
+  if(req.params){
+    for(param in req.params){
+      if(Array.isArray(req.params[param])) {
+        req.params[param] = req.params[param].map(item => cleanText.clean(item))
+      } else{
+        req.params[param] = cleanText.clean(req.params[param]);
+      }
+    }
+  }
+  if(req.query){
+    for(field in req.query){
+      if(Array.isArray(req.query[field])) {
+        req.query[field] = req.query[field].map(item => cleanText.clean(item))
+      } else{
+        req.query[field] = cleanText.clean(req.query[field]);
+      }
+    }
+  }
   next()
 })
 

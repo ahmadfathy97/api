@@ -18,7 +18,7 @@ controller.FetchAllNotifications = (req, res)=>{
     notis.forEach((noti)=>{
       if(noti){
         let customNoti = noti.toJSON();
-        customNoti.user_id.pic = `http://${req.hostname}/${customNoti.user_id.pic}`;
+        customNoti.user_id.pic = `https://${req.hostname}/${customNoti.user_id.pic}`;
         customNotis.push(customNoti);
       }
     });
@@ -50,7 +50,7 @@ controller.SpecificUser = (req, res)=>{
       }
       else {
         let customUser = user.toJSON();
-        if(customUser.pic) customUser.pic = `http://${req.hostname}/${customUser.pic}`;
+        if(customUser.pic) customUser.pic = `https://${req.hostname}/${customUser.pic}`;
         res.json({success: true, user: customUser});
       }
     }
@@ -114,7 +114,7 @@ controller.UpdateUser = (req, res)=>{
           let customUser = newUser.toJSON();
           if(customUser.password) delete customUser.password;
           if(customUser.notifications) delete customUser.notifications;
-          if(customUser.pic) customUser.pic = `http://${req.hostname}/${customUser.pic}`;
+          if(customUser.pic) customUser.pic = `https://${req.hostname}/${customUser.pic}`;
           res.json(customUser);
           }
         })

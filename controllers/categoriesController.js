@@ -8,7 +8,7 @@ controller.AllCategories = (req, res)=>{
     if (err) res.json({success: false, msg: 'something went wrong'});
     else if(categories){
       categories.forEach((category)=>{
-        category.category_pic = `http://${req.hostname}/${category.category_pic}`;
+        category.category_pic = `https://${req.hostname}/${category.category_pic}`;
       })
       res.json({success: true, categories});
     }
@@ -24,7 +24,7 @@ controller.SpecificCategory = (req, res)=>{
       .select('createdAt created_at title')
       .sort({'createdAt': -1})
       .exec((err, posts)=>{
-        category.category_pic = `http://${req.hostname}/${category.category_pic}`;
+        category.category_pic = `https://${req.hostname}/${category.category_pic}`;
         res.json({success: true, category: category, posts: posts || []});
       })
     }

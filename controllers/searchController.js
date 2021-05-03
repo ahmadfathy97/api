@@ -12,7 +12,7 @@ controller.SearchForUsers = (req, res) => {
       let newUsers = [];
       users.forEach((user)=>{
         let newUser = user.toJSON();
-        if(newUser.pic) newUser.pic = `http://${req.hostname}/${newUser.pic}`;
+        if(newUser.pic) newUser.pic = `https://${req.hostname}/${newUser.pic}`;
         newUsers.push(newUser);
       });
       res.json({success: true, searchResult: newUsers});
